@@ -1,0 +1,9 @@
+# Netlify configuration — this is a plain static site (no build step).
+[build]
+  publish = "public"
+
+# Long-cache the static assets (images, video); the HTML/JS stay fresh.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

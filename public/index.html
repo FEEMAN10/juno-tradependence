@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0D0E10">
+<title>Juno · Tradependence Day 2026 — Invitation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --orange:#E8690A; --orange-deep:#C45608; --ink:#0D0E10; --surface:#15171A;
+  --surface-2:#1c1f24; --line:rgba(237,237,234,.10); --line-2:rgba(237,237,234,.18);
+  --paper:#EDEDEA; --muted:#9a9ea6; --muted-2:#71757d;
+  --serif:'DM Serif Display',Georgia,serif; --sans:'DM Sans',system-ui,sans-serif; --mono:'JetBrains Mono',monospace;
+  --ok:#3fae6b; --shadow:0 18px 50px rgba(0,0,0,.55);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{background:#050506;color:var(--paper);font-family:var(--sans);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;display:flex;justify-content:center;min-height:100vh}
+img{max-width:100%;display:block}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+::selection{background:var(--orange);color:var(--ink)}
+.app{position:relative;width:100%;max-width:430px;min-height:100vh;background:var(--ink);overflow:hidden}
+@media(min-width:480px){
+  body{align-items:flex-start;padding:24px 0}
+  .app{min-height:calc(100vh - 48px);height:900px;border-radius:44px;box-shadow:var(--shadow);border:10px solid #000;overflow:hidden}
+}
+
+/* ---------- LANGUAGE GATE ---------- */
+#langGate{position:absolute;inset:0;z-index:70;background:#0b0c0e;display:flex;align-items:center;justify-content:center;
+  padding:32px;text-align:center;transition:opacity .5s ease;overflow:hidden}
+#langGate.hide{opacity:0;pointer-events:none}
+#langGate .bg2{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.22}
+#langGate .bg2:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,12,14,.5),rgba(11,12,14,.92))}
+.lg-inner{position:relative;z-index:2;width:100%;max-width:340px}
+.lg-badge{width:240px;max-width:78%;margin:0 auto 28px;filter:drop-shadow(0 8px 24px rgba(0,0,0,.6))}
+.lg-title{font-family:var(--serif);font-size:23px;line-height:1.2}
+.lg-sub{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-top:8px}
+.lg-opts{margin-top:30px;display:flex;flex-direction:column;gap:14px}
+.lg-opt{display:flex;align-items:center;gap:16px;padding:15px 18px;border-radius:16px;border:1px solid var(--line-2);
+  background:var(--surface);transition:.15s;text-align:left}
+.lg-opt:active{border-color:var(--orange);background:rgba(232,105,10,.09)}
+.lg-opt .flag{width:46px;height:31px;flex:0 0 46px;border-radius:6px;overflow:hidden;border:1px solid var(--line-2)}
+.lg-opt .flag svg{width:100%;height:100%;display:block}
+.lg-opt .lg-name{font-size:16px;font-weight:600;color:var(--paper)}
+.lg-opt .lg-go{margin-left:auto;font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--orange)}
+.lg-foot{margin-top:26px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2)}
+
+/* ---------- SPLASH ---------- */
+#splash{position:absolute;inset:0;z-index:60;background:#000;display:flex;align-items:center;justify-content:center;
+  transition:opacity .7s ease;overflow:hidden}
+#splash.hide{opacity:0;pointer-events:none}
+#splashVid{width:100%;height:100%;object-fit:cover}
+.splash-ctl{position:absolute;bottom:26px;left:0;right:0;display:flex;justify-content:center;gap:10px;z-index:2}
+.chip-btn{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:9px 16px;border-radius:999px;
+  background:rgba(0,0,0,.5);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.28);color:#fff;display:flex;align-items:center;gap:7px}
+.splash-tap{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:rgba(0,0,0,.35);z-index:3}
+.splash-tap.show{display:flex}
+.play-ring{width:74px;height:74px;border-radius:50%;border:2px solid var(--orange);display:flex;align-items:center;justify-content:center;background:rgba(232,105,10,.14)}
+.play-ring:after{content:"";border-left:20px solid var(--orange);border-top:12px solid transparent;border-bottom:12px solid transparent;margin-left:5px}
+
+/* ---------- SCROLL ---------- */
+.scroll{height:100vh;overflow-y:auto;-webkit-overflow-scrolling:touch;scroll-behavior:smooth}
+@media(min-width:480px){.scroll{height:100%}}
+.scroll::-webkit-scrollbar{width:0}
+.bg{position:absolute;inset:0;z-index:0;background-size:cover;background-position:center;opacity:.5}
+.bg:after{content:"";position:absolute;inset:0;background:
+  radial-gradient(120% 60% at 50% 0%,rgba(232,105,10,.16),transparent 60%),
+  linear-gradient(180deg,rgba(5,5,6,.55),rgba(5,5,6,.86) 45%,var(--ink) 92%)}
+
+.topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:12px 16px;background:linear-gradient(180deg,rgba(13,14,16,.92),rgba(13,14,16,0));backdrop-filter:blur(4px)}
+.topbar img.mark{height:20px;width:auto}
+.lang-toggle{display:flex;border:1px solid var(--line-2);border-radius:999px;overflow:hidden}
+.lang-toggle button{font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;padding:5px 10px;color:var(--muted)}
+.lang-toggle button.on{background:var(--orange);color:var(--ink);font-weight:700}
+.top-guest{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;color:var(--muted);text-align:right;line-height:1.3}
+.top-guest b{color:var(--paper);display:block;font-size:11px;letter-spacing:.01em}
+
+section{position:relative;z-index:5;padding:46px 22px}
+.kicker{font-family:var(--mono);font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--orange);display:flex;align-items:center;gap:10px;margin:0 0 14px}
+.kicker:before{content:"";width:22px;height:1px;background:var(--orange)}
+h1,h2,h3{font-family:var(--serif);font-weight:400;line-height:1.12;margin:0}
+h1{font-size:40px;letter-spacing:-.5px}
+h2{font-size:28px}
+.lede{color:#cfd2d6;font-size:16px;margin:16px 0 0}
+.muted{color:var(--muted)}
+.mono{font-family:var(--mono)}
+
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;text-align:center;padding-top:70px;padding-bottom:40px}
+@media(min-width:480px){.hero{min-height:100%}}
+.badge{width:300px;max-width:82%;margin:0 auto 24px;filter:drop-shadow(0 10px 28px rgba(0,0,0,.6))}
+.hero .lede{max-width:330px;margin-left:auto;margin-right:auto}
+.dear{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:30px 0 4px}
+.guest-name{font-family:var(--serif);font-size:24px;font-style:italic;color:var(--paper)}
+.event-line{margin:22px auto 0;display:inline-flex;align-items:center;gap:12px;font-family:var(--mono);font-size:12.5px;letter-spacing:.08em;color:#e9ebee;border:1px solid var(--line-2);border-radius:999px;padding:9px 16px}
+.event-line span{color:var(--orange)}
+.rsvp{margin-top:30px}
+.rsvp-q{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.rsvp-btns{display:flex;gap:12px;justify-content:center}
+.btn{font-family:var(--sans);font-weight:600;font-size:15px;padding:14px 26px;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;gap:9px;transition:.18s;border:1px solid transparent}
+.btn-accept{background:var(--orange);color:var(--ink)}
+.btn-accept:active{background:var(--orange-deep)}
+.btn-decline{background:transparent;color:var(--paper);border-color:var(--line-2)}
+.btn-decline:active{background:rgba(255,255,255,.06)}
+.btn-lg{width:100%;padding:16px}
+.rsvp-state{display:none;margin-top:26px;animation:fade .5s}
+.rsvp-state.show{display:block}
+.state-chip{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12px;letter-spacing:.06em;padding:10px 18px;border-radius:999px}
+.state-chip.acc{background:rgba(63,174,107,.14);border:1px solid rgba(63,174,107,.4);color:#7fe0a3}
+.state-chip.dec{background:rgba(255,255,255,.05);border:1px solid var(--line-2);color:var(--muted);cursor:pointer}
+.scroll-hint{margin-top:34px;font-family:var(--mono);font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted-2)}
+.scroll-hint .arrow{display:block;margin:8px auto 0;width:16px;height:16px;border-right:1.5px solid var(--muted-2);border-bottom:1.5px solid var(--muted-2);transform:rotate(45deg);animation:bob 1.8s infinite}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(45deg)}50%{transform:translateY(5px) rotate(45deg)}}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+
+.card{background:linear-gradient(180deg,var(--surface),rgba(21,23,26,.6));border:1px solid var(--line);border-radius:18px;padding:18px}
+.divider{height:1px;background:var(--line);margin:0 22px}
+.info-row{display:flex;gap:14px;padding:15px 0;border-bottom:1px solid var(--line)}
+.info-row:last-child{border-bottom:none}
+.info-ico{width:38px;height:38px;flex:0 0 38px;border-radius:11px;background:rgba(232,105,10,.12);display:flex;align-items:center;justify-content:center;font-size:18px}
+.info-row .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.info-row .v{font-size:15.5px;color:var(--paper);margin-top:2px}
+.info-row .v small{color:var(--muted);font-size:12.5px}
+.agenda{margin-top:8px;position:relative;padding-left:20px}
+.agenda:before{content:"";position:absolute;left:4px;top:6px;bottom:6px;width:1px;background:var(--line-2)}
+.ag{position:relative;padding:9px 0 9px 14px}
+.ag:before{content:"";position:absolute;left:-20px;top:14px;width:9px;height:9px;border-radius:50%;background:var(--ink);border:2px solid var(--orange)}
+.ag .t{font-family:var(--mono);font-size:12px;color:var(--orange);letter-spacing:.05em}
+.ag .d{font-size:14.5px;color:var(--paper)}
+.cal-btn{margin-top:18px}
+.cal-sheet{display:none;margin-top:12px;gap:10px;flex-direction:column;animation:fade .3s}
+.cal-sheet.show{display:flex}
+.cal-opt{display:flex;align-items:center;gap:12px;padding:13px 15px;border:1px solid var(--line-2);border-radius:12px;background:var(--surface-2);font-size:14.5px}
+.cal-opt .em{font-size:20px}
+.mapembed{margin-top:16px;border-radius:14px;overflow:hidden;border:1px solid var(--line)}
+.mapembed iframe{width:100%;height:190px;border:0;display:block;filter:saturate(.9)}
+.map-cap{display:flex;align-items:center;gap:8px;padding:11px 14px;background:var(--surface);font-size:13px;color:#dfe1e4}
+.map-cap .pin{color:var(--orange)}
+
+#meal{scroll-margin-top:60px}
+.locked-wrap{position:relative}
+.lock-overlay{position:absolute;inset:0;z-index:10;background:rgba(9,10,12,.78);backdrop-filter:blur(3px);border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px}
+.lock-overlay.gone{display:none}
+.lock-ico{width:46px;height:46px;border-radius:50%;border:1px solid var(--line-2);display:flex;align-items:center;justify-content:center;font-size:20px}
+.fieldset{margin-top:22px}
+.fieldset:first-child{margin-top:8px}
+.flabel{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--paper);display:flex;align-items:center;gap:8px}
+.flabel .req{color:var(--orange)}
+.fhint{font-size:13px;color:var(--muted);margin:4px 0 12px}
+.opt{display:flex;align-items:center;gap:13px;padding:14px 15px;border:1px solid var(--line-2);border-radius:13px;margin-bottom:10px;transition:.15s;background:var(--surface)}
+.opt:active{background:var(--surface-2)}
+.opt.sel{border-color:var(--orange);background:rgba(232,105,10,.09)}
+.opt .radio{width:20px;height:20px;flex:0 0 20px;border-radius:50%;border:2px solid var(--muted);position:relative;transition:.15s}
+.opt.sel .radio{border-color:var(--orange)}
+.opt.sel .radio:after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--orange)}
+.opt .tt{font-size:15px;color:var(--paper)}
+.opt .ss{font-size:12.5px;color:var(--muted)}
+.opt .emoji{font-size:22px;margin-left:auto}
+.opt-thumb{width:56px;height:56px;flex:0 0 56px;border-radius:10px;object-fit:cover;margin-left:auto;border:1px solid var(--line-2)}
+.seg{display:flex;gap:10px}
+.seg .opt{flex:1;justify-content:center;text-align:center;flex-direction:column;gap:6px;margin-bottom:0}
+.seg .opt .radio{display:none}
+textarea{width:100%;background:var(--surface);border:1px solid var(--line-2);border-radius:12px;color:var(--paper);font-family:var(--sans);font-size:14.5px;padding:12px;resize:vertical;min-height:70px;margin-top:10px}
+textarea:focus{outline:none;border-color:var(--orange)}
+.diet-extra{display:none}.diet-extra.show{display:block}
+.submit-note{font-size:12px;color:var(--muted);text-align:center;margin-top:14px;display:flex;align-items:center;gap:7px;justify-content:center}
+.meal-done{display:none;animation:fade .4s}
+.meal-done.show{display:block}
+.done-head{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.done-head .ok{width:40px;height:40px;border-radius:50%;background:rgba(63,174,107,.15);border:1px solid rgba(63,174,107,.45);display:flex;align-items:center;justify-content:center;color:#7fe0a3;font-size:20px}
+.done-head .dh{font-family:var(--serif);font-size:20px}
+.summary{margin-top:16px;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.summary .sr{display:flex;justify-content:space-between;gap:12px;padding:12px 15px;border-bottom:1px solid var(--line);font-size:14px}
+.summary .sr:last-child{border-bottom:none}
+.summary .sr .k{color:var(--muted);font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.summary .sr .v{color:var(--paper);text-align:right}
+.cater-note{margin-top:14px;font-size:12.5px;color:var(--muted);display:flex;gap:9px;align-items:flex-start}
+.cater-note .d{width:7px;height:7px;border-radius:50%;background:var(--orange);margin-top:6px;flex:0 0 7px}
+details.devnote{margin-top:16px;border:1px dashed var(--line-2);border-radius:12px;padding:0 14px;background:rgba(0,0,0,.25)}
+details.devnote summary{cursor:pointer;padding:12px 0;font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--muted);list-style:none;display:flex;align-items:center;gap:8px}
+details.devnote summary::-webkit-details-marker{display:none}
+details.devnote pre{margin:0 0 14px;font-family:var(--mono);font-size:11px;line-height:1.7;color:#bfe0c9;overflow-x:auto;white-space:pre-wrap;word-break:break-word}
+.edit-link{margin-top:14px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--orange);letter-spacing:.05em;cursor:pointer}
+
+.dc-sub{font-family:var(--mono);font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);margin-top:8px}
+.dc-group{margin-top:22px}
+.dc-label{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--orange);display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.dc-label:before{content:"";width:16px;height:1px;background:var(--orange)}
+.dc-photo{width:100%;border-radius:12px;border:1px solid var(--line);display:block}
+.dc-desc{font-size:13.5px;color:#cfd2d6;margin-top:10px;line-height:1.5}
+.dc-accent{margin-top:26px;border:1px solid var(--line-2);border-radius:16px;padding:16px;background:linear-gradient(180deg,rgba(232,105,10,.09),rgba(21,23,26,.4))}
+.dc-accent-top{display:flex;gap:14px;align-items:center}
+.dc-accent-top img{width:96px;border-radius:10px;flex:0 0 96px}
+.dc-accent-h{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--orange)}
+.dc-accent-t{font-size:13.5px;color:#dfe1e4;margin-top:6px}
+.dc-icons{width:100%;margin-top:14px;border-radius:10px;display:block;opacity:.96}
+
+.dress-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.tag{font-family:var(--mono);font-size:11px;letter-spacing:.06em;padding:7px 12px;border-radius:999px;border:1px solid var(--line-2);color:#dfe1e4}
+.tag.on{background:rgba(232,105,10,.12);border-color:var(--orange);color:var(--orange)}
+.chk{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.chk:last-child{border-bottom:none}
+.chk .m{color:var(--orange);flex:0 0 auto;font-size:15px;margin-top:1px}
+.no .m{color:#e0685f}
+.chk .tx{font-size:14.5px;color:#dfe1e4}
+.chk .tx small{display:block;color:var(--muted);font-size:12.5px;margin-top:1px}
+
+.closing{text-align:center;padding-top:54px;padding-bottom:70px}
+.coin{width:96px;margin:0 auto 22px;filter:drop-shadow(0 10px 30px rgba(232,105,10,.35))}
+.closing h2{max-width:300px;margin:0 auto}
+.tagline-img{width:190px;margin:26px auto 0;opacity:.9}
+.share-btn{margin:30px auto 0;max-width:260px}
+.foot-mark{margin:40px auto 0;width:120px;opacity:.7}
+.foot-fine{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--muted-2);margin-top:16px;text-transform:uppercase}
+
+#toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(20px);z-index:80;background:var(--surface-2);border:1px solid var(--line-2);color:var(--paper);padding:12px 20px;border-radius:12px;font-size:13.5px;box-shadow:var(--shadow);opacity:0;transition:.3s;pointer-events:none;max-width:88%}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* confirm modal */
+.cm{position:fixed;inset:0;z-index:90;background:rgba(3,4,5,.72);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:24px}
+.cm.show{display:flex;animation:fade .25s}
+.cm-box{background:var(--surface);border:1px solid var(--line-2);border-radius:20px;padding:22px;max-width:360px;width:100%;box-shadow:var(--shadow);text-align:center}
+.cm-ico{width:50px;height:50px;border-radius:50%;margin:0 auto 12px;background:rgba(232,105,10,.14);border:1px solid var(--orange);display:flex;align-items:center;justify-content:center;font-size:22px}
+.cm-title{font-family:var(--serif);font-size:21px}
+.cm-text{font-size:13.5px;color:var(--muted);margin-top:8px;line-height:1.5}
+.cm-summary{margin-top:16px;border:1px solid var(--line);border-radius:12px;overflow:hidden;text-align:left}
+.cm-summary .sr{display:flex;justify-content:space-between;gap:12px;padding:10px 13px;border-bottom:1px solid var(--line);font-size:13.5px}
+.cm-summary .sr:last-child{border-bottom:none}
+.cm-summary .sr .k{color:var(--muted);font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase}
+.cm-summary .sr .v{color:var(--paper);text-align:right}
+.cm-btns{display:flex;gap:10px;margin-top:18px}
+.cm-btns .btn{flex:1;padding:13px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ========== LANGUAGE GATE ========== -->
+  <div id="langGate">
+    <div class="bg2" style="background-image:url('assets/bg.jpg')"></div>
+    <div class="lg-inner">
+      <img class="lg-badge" src="assets/badge.png" alt="Tradependence Day 2026">
+      <div class="lg-title">Choose your language</div>
+      <div class="lg-sub">Pilih bahasa Anda</div>
+      <div class="lg-opts">
+        <button class="lg-opt" onclick="chooseLang('id')">
+          <span class="flag"><svg viewBox="0 0 60 40" preserveAspectRatio="none"><rect width="60" height="20" fill="#e70011"/><rect y="20" width="60" height="20" fill="#fff"/></svg></span>
+          <span class="lg-name">Bahasa Indonesia</span><span class="lg-go">Mulai ›</span>
+        </button>
+        <button class="lg-opt" onclick="chooseLang('en')">
+          <span class="flag"><svg viewBox="0 0 60 40" preserveAspectRatio="none"><rect width="60" height="40" fill="#012169"/><path d="M0 0L60 40M60 0L0 40" stroke="#fff" stroke-width="8"/><path d="M0 0L60 40M60 0L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0V40M0 20H60" stroke="#fff" stroke-width="12"/><path d="M30 0V40M0 20H60" stroke="#C8102E" stroke-width="6"/></svg></span>
+          <span class="lg-name">English</span><span class="lg-go">Enter ›</span>
+        </button>
+      </div>
+      <div class="lg-foot">Jakarta Phinisi · 18 · 08 · 2026</div>
+    </div>
+  </div>
+
+  <!-- ========== SPLASH ========== -->
+  <div id="splash">
+    <video id="splashVid" muted playsinline preload="auto"><source src="assets/splash.webm" type="video/webm"></video>
+    <div class="splash-tap" id="splashTap">
+      <div class="play-ring"></div>
+      <div class="chip-btn" style="border:none;background:none" id="tapLabel">Tap to play</div>
+    </div>
+    <div class="splash-ctl">
+      <button class="chip-btn" id="soundBtn">🔇 <span id="soundLabel">Sound off</span></button>
+      <button class="chip-btn" id="skipBtn"><span id="skipLabel">Skip</span> ›</button>
+    </div>
+  </div>
+
+  <!-- ========== MAIN ========== -->
+  <div class="scroll" id="scroll">
+    <div class="bg" style="background-image:url('assets/bg.jpg')"></div>
+
+    <div class="topbar">
+      <img class="mark" src="assets/wordmark.png" alt="Juno">
+      <div class="lang-toggle">
+        <button data-l="id" onclick="setLang('id')">ID</button>
+        <button data-l="en" onclick="setLang('en')">EN</button>
+      </div>
+      <div class="top-guest"><span data-i18n="topLabel">Invitation for</span><b id="topGuest">Mr. Andi Wijaya</b></div>
+    </div>
+
+    <!-- HERO -->
+    <section class="hero" id="hero">
+      <img class="badge" src="assets/badge.png" alt="Tradependence Day 2026">
+      <p class="lede" data-i18n="heroLede">You are invited to an exclusive gathering where <em>speed, precision,</em> and <em>transparency</em> come together in one experience.</p>
+      <div class="dear" data-i18n="heroDear">The pleasure of the company of</div>
+      <div class="guest-name" id="dearGuest">Mr. Andi Wijaya</div>
+      <div class="event-line" id="eventLine" data-i18n="eventLine"><span>◆</span> Jakarta Phinisi <span>·</span> 18 August 2026</div>
+
+      <div class="rsvp" id="rsvpBlock">
+        <div class="rsvp-q" data-i18n="rsvpQ">Will you join us on board?</div>
+        <div class="rsvp-btns">
+          <button class="btn btn-accept" data-i18n="btnAccept" onclick="setRsvp('accept')">Accept ✦</button>
+          <button class="btn btn-decline" data-i18n="btnDecline" onclick="setRsvp('decline')">Decline</button>
+        </div>
+      </div>
+      <div class="rsvp-state" id="rsvpState"></div>
+      <div class="scroll-hint"><span data-i18n="scrollHint">Explore the evening</span><span class="arrow"></span></div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- DETAILS -->
+    <section id="details">
+      <div class="kicker" data-i18n="evKicker">The Evening</div>
+      <h2 data-i18n="evTitle">Details &amp; arrival</h2>
+      <div class="card" style="margin-top:20px">
+        <div class="info-row"><div class="info-ico">🗓️</div><div><div class="k" data-i18n="kDate">Date</div><div class="v" data-i18n="vDate">Tuesday, 18 August 2026</div></div></div>
+        <div class="info-row"><div class="info-ico">⏱️</div><div><div class="k" data-i18n="kTime">Boarding / Time</div><div class="v" data-i18n="vTime">18:00 boarding · 18:30 cast off <small>(WIB) — placeholder</small></div></div></div>
+        <div class="info-row"><div class="info-ico">⚓</div><div><div class="k" data-i18n="kVenue">Boarding point</div><div class="v" data-i18n="vVenue">Dermaga Baywalk Mall <small>Jetty to Pulau Seribu · Pluit, North Jakarta</small></div></div></div>
+        <div class="info-row"><div class="info-ico">👔</div><div><div class="k" data-i18n="kDress">Dress code</div><div class="v" data-i18n="vDress">Modern Explorer — see below</div></div></div>
+      </div>
+
+      <div class="kicker" style="margin-top:26px" data-i18n="rosKicker">Run of show</div>
+      <div class="agenda">
+        <div class="ag"><div class="t">18:00</div><div class="d" data-i18n="ag1">Boarding &amp; welcome drinks</div></div>
+        <div class="ag"><div class="t">18:30</div><div class="d" data-i18n="ag2">Cast off — Jakarta bay at golden hour</div></div>
+        <div class="ag"><div class="t">19:15</div><div class="d" data-i18n="ag3">Dinner service (your menu below)</div></div>
+        <div class="ag"><div class="t">20:30</div><div class="d" data-i18n="ag4">Juno program · "No random move"</div></div>
+        <div class="ag"><div class="t">22:00</div><div class="d" data-i18n="ag5">Return to marina</div></div>
+      </div>
+
+      <button class="btn btn-accept btn-lg cal-btn" data-i18n="btnCal" onclick="toggleCal()">＋ Add to calendar</button>
+      <div class="cal-sheet" id="calSheet">
+        <a class="cal-opt" id="gcalLink" target="_blank" rel="noopener"><span class="em">📅</span> Google Calendar</a>
+        <a class="cal-opt" id="icsLink" download="juno-tradependence-2026.ics"><span class="em">🍎</span> Apple / Outlook (.ics)</a>
+      </div>
+      <div class="mapembed">
+        <iframe title="Boarding point — Dermaga Baywalk Mall" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps?q=-6.1073116,106.7797385&z=16&output=embed"></iframe>
+        <div class="map-cap"><span class="pin">📍</span> <span data-i18n="mapCap">Dermaga Baywalk Mall — jetty to Pulau Seribu</span></div>
+      </div>
+      <a class="btn btn-decline btn-lg" style="margin-top:12px" target="_blank" rel="noopener" data-i18n="btnDir" href="https://www.google.com/maps/dir/?api=1&destination=-6.1073116,106.7797385">🧭 Get directions</a>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- MEAL -->
+    <section id="meal">
+      <div class="kicker" data-i18n="mealKicker">Dine With Us</div>
+      <h2 data-i18n="mealTitle">Your menu selection</h2>
+      <p class="lede" style="font-size:14.5px" data-i18n="mealLede">Tell us what you'd like on board. Your choices go straight to our catering team — one selection per guest.</p>
+
+      <div class="locked-wrap" style="margin-top:20px">
+        <div class="lock-overlay" id="mealLock">
+          <div class="lock-ico">🔒</div>
+          <div style="font-family:var(--serif);font-size:19px" data-i18n="lockTitle">Accept to unlock your menu</div>
+          <div class="muted" style="font-size:13.5px;max-width:250px" data-i18n="lockText">Please accept your invitation above, then choose your dishes here.</div>
+          <button class="btn btn-accept" data-i18n="lockBtn" onclick="setRsvp('accept')">Accept invitation</button>
+        </div>
+
+        <div class="card" id="mealForm">
+          <div class="fieldset">
+            <div class="flabel" data-i18n="canapeLabel">To start · served to all</div>
+            <div class="fhint" data-i18n="canapeHint">Canapés — <b style="color:#dfe1e4">Beef Slider</b> &amp; <b style="color:#dfe1e4">Mini Sandwich</b>. No choice needed.</div>
+          </div>
+
+          <div class="fieldset">
+            <div class="flabel" data-i18n="mainLabel">Main course <span class="req">*</span></div>
+            <div class="fhint" data-i18n="chooseOne">Choose one.</div>
+            <div class="opt" data-group="main" data-val="Salmon Wellington" onclick="pick(this)"><span class="radio"></span><div><div class="tt">Salmon Wellington</div><div class="ss" data-i18n="ssSalmon">puff pastry · spinach · lemon butter · roast veg</div></div><img class="opt-thumb" src="assets/th_salmon.jpg" alt="Salmon Wellington"></div>
+            <div class="opt" data-group="main" data-val="Grill Chicken" onclick="pick(this)"><span class="radio"></span><div><div class="tt">Grill Chicken</div><div class="ss" data-i18n="ssChicken">rich creamy mushroom sauce</div></div><img class="opt-thumb" src="assets/th_grillchicken.jpg" alt="Grill Chicken"></div>
+            <div class="opt" data-group="main" data-val="48hr Beef Rendang Short Ribs" onclick="pick(this)"><span class="radio"></span><div><div class="tt">48-Hr Beef Rendang Short Ribs</div><div class="ss" data-i18n="ssBeef">slow-cooked · Indonesian spice · mashed potato</div></div><img class="opt-thumb" src="assets/th_beef.jpg" alt="48-Hr Beef Rendang Short Ribs"></div>
+            <div class="opt" data-group="main" data-val="Chicken Pop" onclick="pick(this)"><span class="radio"></span><div><div class="tt">Chicken Pop</div><div class="ss" data-i18n="ssPop">coconut-poached · sambal pop · mashed potato</div></div><img class="opt-thumb" src="assets/th_chickenpop.jpg" alt="Chicken Pop"></div>
+          </div>
+
+          <div class="fieldset">
+            <div class="flabel" data-i18n="dessertLabel">Dessert <span class="req">*</span></div>
+            <div class="fhint" data-i18n="chooseOne2">Choose one.</div>
+            <div class="opt" data-group="dessert" data-val="New York Cheesecake" onclick="pick(this)"><span class="radio"></span><div><div class="tt">New York Cheesecake</div><div class="ss" data-i18n="ssNy">vanilla · buttery graham crust</div></div><img class="opt-thumb" src="assets/th_ny.jpg" alt="New York Cheesecake"></div>
+            <div class="opt" data-group="dessert" data-val="Devil Cake" onclick="pick(this)"><span class="radio"></span><div><div class="tt">Devil Cake</div><div class="ss" data-i18n="ssDevil">dark chocolate · silky ganache</div></div><img class="opt-thumb" src="assets/th_devil.jpg" alt="Devil Cake"></div>
+            <div class="opt" data-group="dessert" data-val="Pulut Cake" onclick="pick(this)"><span class="radio"></span><div><div class="tt">Pulut Cake</div><div class="ss" data-i18n="ssPulut">coconut sticky rice · srikaya jam</div></div><img class="opt-thumb" src="assets/th_pulut.jpg" alt="Pulut Cake"></div>
+          </div>
+
+          <div class="fieldset">
+            <div class="flabel" data-i18n="bevLabel">Beverage preference <span class="req">*</span></div>
+            <div class="fhint" data-i18n="bevHint">Select your preference.</div>
+            <div class="seg">
+              <div class="opt" data-group="bev" data-val="Alcoholic" onclick="pick(this)"><span class="radio"></span><span style="font-size:22px">🍷</span><div class="tt" data-i18n="bevAlc">Alcoholic</div></div>
+              <div class="opt" data-group="bev" data-val="Non-Alcoholic" onclick="pick(this)"><span class="radio"></span><span style="font-size:22px">🧃</span><div class="tt" data-i18n="bevNon">Non-alcoholic</div></div>
+            </div>
+          </div>
+
+          <div class="fieldset">
+            <div class="flabel" data-i18n="dietLabel">Dietary requirements</div>
+            <div class="fhint" data-i18n="dietHint">Any allergies or restrictions?</div>
+            <div class="seg">
+              <div class="opt" data-group="diet" data-val="No" onclick="pick(this);dietToggle(false)"><span class="radio"></span><div class="tt" data-i18n="dietNo">No</div></div>
+              <div class="opt" data-group="diet" data-val="Yes" onclick="pick(this);dietToggle(true)"><span class="radio"></span><div class="tt" data-i18n="dietYes">Yes — specify</div></div>
+            </div>
+            <div class="diet-extra" id="dietExtra"><textarea id="dietText" data-i18n-ph="dietPh" placeholder="e.g. shellfish allergy, no pork, gluten-free…"></textarea></div>
+          </div>
+
+          <button class="btn btn-accept btn-lg" style="margin-top:22px" data-i18n="submitBtn" onclick="openConfirm()">Submit my selection</button>
+          <div class="submit-note" data-i18n="submitNote">🔒 Final once submitted · cannot be changed afterwards</div>
+        </div>
+      </div>
+
+      <div class="meal-done" id="mealDone">
+        <div class="card">
+          <div class="done-head"><div class="ok">✓</div><div><div class="dh" data-i18n="doneTitle">Selection received</div><div class="muted" style="font-size:13px" data-i18n="doneSub">Thank you — we've noted your choices.</div></div></div>
+          <div class="summary" id="summary"></div>
+          <div class="cater-note"><span class="d"></span><div data-i18n="caterNote">This selection is <b>final</b> and has been forwarded to the <b>catering vendor</b>, tagged to your name and seat.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- DRESS CODE -->
+    <section id="dress">
+      <div class="kicker" data-i18n="dressKicker">Dress Code</div>
+      <h2>Modern Explorer</h2>
+      <div class="dc-sub">Monochrome Edition</div>
+      <p class="lede" style="font-size:14.5px" data-i18n="dressLede">Elegant. Disciplined. Intentional. Neutral colours, clean cuts, premium materials. One orange accent, one shared direction.</p>
+      <div class="dress-tags">
+        <span class="tag" data-i18n="tagBlack">Black</span><span class="tag" data-i18n="tagIvory">Ivory</span><span class="tag" data-i18n="tagStone">Stone</span><span class="tag" data-i18n="tagOlive">Olive</span><span class="tag on" data-i18n="tagAccent">Orange accent</span>
+      </div>
+      <div class="dc-group">
+        <div class="dc-label" data-i18n="lblMen">Men</div>
+        <img class="dc-photo" src="assets/dress_men.jpg" alt="Men dress code inspiration">
+        <div class="dc-desc" data-i18n="descMen">Black or ivory linen shirt, tailored stone / black trousers, loafers or premium white sneakers. No ties, no loud prints.</div>
+      </div>
+      <div class="dc-group">
+        <div class="dc-label" data-i18n="lblWomen">Women · non-hijab</div>
+        <img class="dc-photo" src="assets/dress_women.jpg" alt="Women (non-hijab) dress code inspiration">
+        <div class="dc-desc" data-i18n="descWomen">Black, ivory, stone, or olive dresses, jumpsuits, or coordinated separates with clean silhouettes. Minimal jewelry and leather footwear.</div>
+      </div>
+      <div class="dc-group">
+        <div class="dc-label" data-i18n="lblHijab">Women · hijab</div>
+        <img class="dc-photo" src="assets/dress_hijab.jpg" alt="Women (hijab) dress code inspiration">
+        <div class="dc-desc" data-i18n="descHijab">Modest silhouettes in neutral tones. Dresses, tunics with wide-leg pants, or coordinated sets. Keep it clean, elegant, and effortless.</div>
+      </div>
+      <div class="dc-accent">
+        <div class="dc-accent-top">
+          <img src="assets/dress_scarf_photo.jpg" alt="Juno orange scarf">
+          <div>
+            <div class="dc-accent-h" data-i18n="accentH">Accent — Orange Scarf</div>
+            <div class="dc-accent-t" data-i18n="accentT"><b>A gift for you.</b> One orange accent — uniting us all.</div>
+          </div>
+        </div>
+        <img class="dc-icons" src="assets/dress_scarf_icons.jpg" alt="Ways to wear the scarf: neck, wrist, bag, pocket">
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- PROHIBITED -->
+    <section id="prohibited">
+      <div class="kicker" data-i18n="prohKicker">On Board Safety</div>
+      <h2 data-i18n="prohTitle">Please leave behind</h2>
+      <p class="lede" style="font-size:14.5px" data-i18n="prohLede">For everyone's safety and comfort, please do not bring the following on board:</p>
+      <div class="card no" style="margin-top:18px">
+        <div class="chk no"><span class="m">✕</span><div class="tx" data-i18n="proh1">Weapons or sharp objects</div></div>
+        <div class="chk no"><span class="m">✕</span><div class="tx" data-i18n="proh2">Explosives, fireworks or flammable materials</div></div>
+        <div class="chk no"><span class="m">✕</span><div class="tx" data-i18n="proh3">Illegal drugs or controlled substances</div></div>
+        <div class="chk no"><span class="m">✕</span><div class="tx" data-i18n="proh4">Outside alcohol <small>(fully hosted on board)</small></div></div>
+        <div class="chk no"><span class="m">✕</span><div class="tx" data-i18n="proh5">Drones <small>without prior approval</small></div></div>
+      </div>
+      <p class="muted" style="text-align:center;font-family:var(--serif);font-style:italic;font-size:18px;margin-top:22px" data-i18n="prohThanks">Thank you for your cooperation.</p>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- CLOSING -->
+    <section class="closing">
+      <img class="coin" src="assets/coin.png" alt="Juno">
+      <h2 data-i18n="closeH">Join us for an evening where every move has a reason. See you on board.</h2>
+      <img class="tagline-img" src="assets/tagline.png" alt="No Random Move">
+      <button class="btn btn-accept btn-lg share-btn" data-i18n="shareBtn" onclick="doShare()">↗ Share this invitation</button>
+      <img class="foot-mark" src="assets/wordmark.png" alt="Juno">
+      <div class="foot-fine">Tradependence Day · Jakarta · MMXXVI</div>
+    </section>
+  </div>
+
+  <!-- CONFIRM (final) MODAL -->
+  <div class="cm" id="confirmModal">
+    <div class="cm-box">
+      <div class="cm-ico">🔒</div>
+      <div class="cm-title" data-i18n="cmTitle">Confirm your selection</div>
+      <div class="cm-text" data-i18n="cmText">Once submitted, your menu choice is <b>final and cannot be changed</b>. Please review before confirming.</div>
+      <div class="cm-summary" id="cmSummary"></div>
+      <div class="cm-btns">
+        <button class="btn btn-decline" data-i18n="cmCancel" onclick="closeConfirm()">Review again</button>
+        <button class="btn btn-accept" data-i18n="cmConfirm" onclick="finalizeSubmit()">Confirm &amp; submit</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
