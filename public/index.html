@@ -95,6 +95,14 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 /* menu attention pulse after accepting */
 @keyframes attnPulse{0%,100%{box-shadow:0 0 0 0 rgba(232,105,10,0);border-color:var(--line)}50%{box-shadow:0 0 0 4px rgba(232,105,10,.30);border-color:rgba(232,105,10,.55)}}
 #mealForm.attn{animation:attnPulse 1.15s ease-in-out 3}
+/* meal reminder banner (closing) */
+.meal-reminder{display:flex;align-items:center;gap:12px;text-align:left;width:100%;max-width:340px;margin:26px auto 0;
+  padding:14px 16px;border-radius:14px;background:rgba(232,105,10,.10);border:1px solid rgba(232,105,10,.42);
+  animation:dotPulse 1.8s ease-in-out infinite}
+.meal-reminder .mr-ico{font-size:22px;flex:0 0 auto}
+.meal-reminder .mr-tx{display:flex;flex-direction:column;gap:2px}
+.meal-reminder .mr-tx b{font-size:14px;color:var(--paper)}
+.meal-reminder .mr-tx small{font-size:12px;color:var(--muted);line-height:1.4}
 .topbar img.mark{height:20px;width:auto}
 .lang-toggle{display:flex;border:1px solid var(--line-2);border-radius:999px;overflow:hidden}
 .lang-toggle button{font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;padding:5px 10px;color:var(--muted)}
@@ -531,6 +539,11 @@ details.devnote pre{margin:0 0 14px;font-family:var(--mono);font-size:11px;line-
       <img class="coin" src="assets/coin.png" alt="Juno">
       <h2 data-i18n="closeH">Join us for an evening where every move has a reason. See you on board.</h2>
       <img class="tagline-img" src="assets/tagline.png" alt="No Random Move">
+      <!-- Meal reminder — only for guests who accepted but haven't submitted a meal -->
+      <button class="meal-reminder" id="mealReminder" style="display:none" onclick="jumpToFood()">
+        <span class="mr-ico">🍽️</span>
+        <span class="mr-tx"><b data-i18n="remindT">Your meal isn’t chosen yet</b><small data-i18n="remindS">Tap to pick your dishes so catering has your order →</small></span>
+      </button>
       <!-- Shareable card — only shown once the guest has ACCEPTED -->
       <div class="share-wrap" id="shareWrap" style="display:none">
         <div class="kicker share-kick" data-i18n="shareKicker">You’re on the list</div>

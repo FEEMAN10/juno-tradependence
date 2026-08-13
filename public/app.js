@@ -45,6 +45,7 @@ var I18N={
   closeH:'Join us for an evening where every move has a reason. See you on board.', shareBtn:'↗ Share this invitation',
   shareKicker:'You’re on the list', shareLede:'Save your card and share it to your story.',
   navAttend:'Attend', navRundown:'Rundown', navMap:'Map', navFood:'Food', navDress:'Dress', navSafety:'Safety',
+  remindT:'Your meal isn’t chosen yet', remindS:'Tap to pick your dishes so catering has your order →',
   shareImg:'↗ Share my card', shareDl:'⤓ Save image', shareFmt:'Size', shareStyle:'Style',
   shareLede2:'Pick a size and style, then share it to your story.',
   shareCardKicker:'See you on board', shareCardDate:'Jakarta Phinisi · 18 August 2026',
@@ -99,6 +100,7 @@ var I18N={
   closeH:'Bergabunglah di malam di mana setiap langkah punya alasan. Sampai jumpa di kapal.', shareBtn:'↗ Bagikan undangan ini',
   shareKicker:'Kamu terdaftar', shareLede:'Simpan kartu ini dan bagikan ke story kamu.',
   navAttend:'Hadir', navRundown:'Acara', navMap:'Peta', navFood:'Menu', navDress:'Busana', navSafety:'Aman',
+  remindT:'Menu kamu belum dipilih', remindS:'Ketuk untuk memilih hidangan agar katering menerima pesananmu →',
   shareImg:'↗ Bagikan kartu', shareDl:'⤓ Simpan gambar', shareFmt:'Ukuran', shareStyle:'Gaya',
   shareLede2:'Pilih ukuran dan gaya, lalu bagikan ke story kamu.',
   shareCardKicker:'Sampai jumpa di kapal', shareCardDate:'Jakarta Phinisi · 18 Agustus 2026',
@@ -439,7 +441,10 @@ function jumpToFood(){
   if(f){ f.classList.remove('attn'); void f.offsetWidth; f.classList.add('attn');
     setTimeout(function(){ f.classList.remove('attn'); },4000); }
 }
-function setFoodPending(on){ var s=document.querySelector('.jstep[data-target="meal"]'); if(s) s.classList.toggle('pending',!!on); }
+function setFoodPending(on){
+  var s=document.querySelector('.jstep[data-target="meal"]'); if(s) s.classList.toggle('pending',!!on);
+  var r=document.getElementById('mealReminder'); if(r) r.style.display=on?'flex':'none';
+}
 
 /* ============ utils ============ */
 function esc(s){return String(s).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]});}

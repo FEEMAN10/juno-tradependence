@@ -52,6 +52,13 @@ input:focus,select:focus{outline:none;border-color:var(--orange)}
 .stat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
 .stat .n{font-size:26px;font-weight:700;line-height:1}
 .stat .l{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+.awaiting-stat{cursor:pointer;border-color:rgba(232,105,10,.4);transition:.15s}
+.awaiting-stat:hover{border-color:var(--orange)}
+.awaiting-stat .n{color:var(--warn)}
+.awaiting-stat.active{background:rgba(232,105,10,.12);border-color:var(--orange)}
+.awaiting-stat.active .n{color:var(--orange)}
+tr.row-awaiting td{background:rgba(232,105,10,.06)}
+tr.row-awaiting td:first-child{box-shadow:inset 3px 0 0 var(--orange)}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
 .row .field{margin-top:0;flex:1;min-width:150px}
 .sec-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:26px 0 12px}
@@ -197,25 +204,32 @@ tr:last-child td{border-bottom:none}
     });
   }
 
+  var filterAwaiting = false;
+  function isAwaiting(r){ return r.rsvp_status==='accepted' && !r.selection_at; }
+
   function render(){
     // stats
-    var acc=0,dec=0,pen=0,sub=0, mains={};
+    var acc=0,dec=0,pen=0,sub=0,awa=0, mains={};
     DATA.forEach(function(r){
       if(r.rsvp_status==='accepted') acc++; else if(r.rsvp_status==='declined') dec++; else pen++;
       if(r.selection_at) sub++;
+      if(isAwaiting(r)) awa++;
       if(r.rsvp_status==='accepted' && r.main_course) mains[r.main_course]=(mains[r.main_course]||0)+1;
     });
-    var mainStr = Object.keys(mains).map(function(k){return k+': '+mains[k];}).join(' · ') || '—';
     $('stats').innerHTML =
       stat(DATA.length,'Guests') + stat(acc,'Accepted') + stat(dec,'Declined') +
-      stat(pen,'Pending') + stat(sub,'Submitted');
+      stat(pen,'Pending') + stat(sub,'Submitted') +
+      '<div class="stat awaiting-stat'+(filterAwaiting?' active':'')+'" data-filter="awaiting" title="Accepted but no meal chosen — click to filter">'+
+        '<div class="n mono">'+awa+'</div><div class="l">Awaiting meal ▾</div></div>';
     $('count').textContent = DATA.length ? '('+DATA.length+')' : '';
 
-    // rows
+    // rows (optionally filtered to awaiting-meal guests)
+    var rows = filterAwaiting ? DATA.filter(isAwaiting) : DATA;
     if(!DATA.length){ $('rows').innerHTML = '<tr><td colspan="9"><div class="empty">No guests yet — add your first one above.</div></td></tr>'; return; }
-    $('rows').innerHTML = DATA.map(function(r){
+    if(!rows.length){ $('rows').innerHTML = '<tr><td colspan="9"><div class="empty">🎉 Everyone who accepted has chosen their meal.</div></td></tr>'; return; }
+    $('rows').innerHTML = rows.map(function(r){
       var diet = r.dietary_flag ? (esc(r.dietary_note)||'yes') : '';
-      return '<tr>'+
+      return '<tr class="'+(isAwaiting(r)?'row-awaiting':'')+'">'+
         '<td><strong>'+esc(r.guest_name)+'</strong>'+(r.email?'<div class="muted" style="font-size:11.5px">'+esc(r.email)+'</div>':'')+'</td>'+
         '<td>'+esc(r.guest_title)+'</td>'+
         '<td><span class="pill '+esc(r.rsvp_status)+'">'+esc(r.rsvp_status)+'</span></td>'+
@@ -233,6 +247,11 @@ tr:last-child td{border-bottom:none}
     }).join('');
   }
   function stat(n,l){ return '<div class="stat"><div class="n mono">'+n+'</div><div class="l">'+l+'</div></div>'; }
+  $('stats').addEventListener('click', function(e){
+    var s=e.target.closest('[data-filter="awaiting"]'); if(!s) return;
+    filterAwaiting=!filterAwaiting; render();
+    if(filterAwaiting) document.querySelector('.sec-title').scrollIntoView({behavior:'smooth',block:'start'});
+  });
 
   // ---- add guest ----
   $('addForm').addEventListener('submit', function(e){
