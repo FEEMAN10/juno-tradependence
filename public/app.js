@@ -10,11 +10,13 @@ var I18N={
   btnAccept:'Accept ✦', btnDecline:'Decline', scrollHint:'Explore the evening',
   evKicker:'The Evening', evTitle:'Details &amp; arrival',
   kDate:'Date', vDate:'Tuesday, 18 August 2026',
-  kTime:'Boarding / Time', vTime:'18:00 boarding · 18:30 cast off <small>(WIB) — placeholder</small>',
+  kTime:'Boarding / Time', vTime:'14:00 registration · 15:00 boarding <small>(WIB)</small>',
   kVenue:'Boarding point', vVenue:'Dermaga Baywalk Mall <small>Jetty to Pulau Seribu · Pluit, North Jakarta</small>',
   kDress:'Dress code', vDress:'Modern Explorer — see below',
   rosKicker:'Run of show',
-  ag1:'Boarding &amp; welcome drinks', ag2:'Cast off — Jakarta bay at golden hour', ag3:'Dinner service (your menu below)', ag4:'Juno program · "No random move"', ag5:'Return to marina',
+  ph1:'ARRIVE', ph2:'CONNECT', ph3:'DINE', ph4:'CELEBRATE', ph5:'FAREWELL',
+  ag1:'Registration · Water Taxi Boarding · Welcome Drinks', ag2:'Opening · Games · Sunset · Networking', ag3:'Dinner · Business Presentation · Partner Stories', ag4:'Games · Doorprize · Toast · Fireworks at 21:10 · Music &amp; Dance', ag5:'Group Photo · Offboarding',
+  keyTimesLabel:'Key times', keyTimes:'14:00 Registration · 15:00 Boarding · 16:00 Program Starts · 19:00 Dinner · 21:10 Fireworks · 22:20 Farewell',
   btnCal:'＋ Add to calendar', mapCap:'Dermaga Baywalk Mall — jetty to Pulau Seribu', btnDir:'🧭 Get directions',
   mealKicker:'Dine With Us', mealTitle:'Your menu selection',
   mealLede:'Tell us what you would like on board. Your choices go straight to our catering team — one selection per guest.',
@@ -57,11 +59,13 @@ var I18N={
   btnAccept:'Hadir ✦', btnDecline:'Berhalangan', scrollHint:'Jelajahi acara',
   evKicker:'Malam Ini', evTitle:'Detail &amp; kedatangan',
   kDate:'Tanggal', vDate:'Selasa, 18 Agustus 2026',
-  kTime:'Boarding / Waktu', vTime:'Boarding 18:00 · berlayar 18:30 <small>(WIB) — sementara</small>',
+  kTime:'Boarding / Waktu', vTime:'Registrasi 14:00 · boarding 15:00 <small>(WIB)</small>',
   kVenue:'Titik boarding', vVenue:'Dermaga Baywalk Mall <small>Dermaga ke Pulau Seribu · Pluit, Jakarta Utara</small>',
   kDress:'Dress code', vDress:'Modern Explorer — lihat di bawah',
   rosKicker:'Rangkaian acara',
-  ag1:'Boarding &amp; welcome drink', ag2:'Berlayar — Teluk Jakarta saat golden hour', ag3:'Makan malam (menu Anda di bawah)', ag4:'Program Juno · "No random move"', ag5:'Kembali ke dermaga',
+  ph1:'TIBA', ph2:'TERHUBUNG', ph3:'SANTAP', ph4:'RAYAKAN', ph5:'PERPISAHAN',
+  ag1:'Registrasi · Naik Water Taxi · Welcome Drink', ag2:'Pembukaan · Games · Sunset · Networking', ag3:'Makan Malam · Presentasi Bisnis · Cerita Partner', ag4:'Games · Doorprize · Toast · Kembang Api pukul 21:10 · Musik &amp; Dansa', ag5:'Foto Bersama · Offboarding',
+  keyTimesLabel:'Waktu penting', keyTimes:'14:00 Registrasi · 15:00 Boarding · 16:00 Program Mulai · 19:00 Makan Malam · 21:10 Kembang Api · 22:20 Perpisahan',
   btnCal:'＋ Tambah ke kalender', mapCap:'Dermaga Baywalk Mall — dermaga ke Pulau Seribu', btnDir:'🧭 Petunjuk arah',
   mealKicker:'Santap Bersama', mealTitle:'Pilihan menu Anda',
   mealLede:'Beri tahu kami pilihan hidangan Anda di kapal. Pilihan Anda langsung diteruskan ke tim katering — satu pilihan per tamu.',
@@ -268,7 +272,7 @@ function buildDevJson(){
 function currentToken(){return new URLSearchParams(location.search).get('g')||'demo';}
 
 /* ============ calendar ============ */
-var EV={title:'Juno · Tradependence Day 2026',start:'20260818T110000Z',end:'20260818T150000Z',
+var EV={title:'Juno · Tradependence Day 2026',start:'20260818T070000Z',end:'20260818T163000Z',
   loc:'Dermaga Baywalk Mall (jetty to Pulau Seribu), Pluit, North Jakarta',
   desc:'You are invited aboard the Jakarta Phinisi for Juno Tradependence Day 2026. Modern Explorer dress code. No random move.'};
 function toggleCal(){

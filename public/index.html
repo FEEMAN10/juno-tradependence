@@ -131,6 +131,9 @@ h2{font-size:28px}
 .ag:before{content:"";position:absolute;left:-20px;top:14px;width:9px;height:9px;border-radius:50%;background:var(--ink);border:2px solid var(--orange)}
 .ag .t{font-family:var(--mono);font-size:12px;color:var(--orange);letter-spacing:.05em}
 .ag .d{font-size:14.5px;color:var(--paper)}
+.keytimes{margin-top:18px;border:1px solid var(--line-2);border-radius:14px;padding:13px 16px;background:var(--surface)}
+.kt-label{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--orange);margin-bottom:7px}
+.kt-strip{font-size:13px;line-height:1.7;letter-spacing:.02em;color:#e3e5e8}
 .cal-btn{margin-top:18px}
 .cal-sheet{display:none;margin-top:12px;gap:10px;flex-direction:column;animation:fade .3s}
 .cal-sheet.show{display:flex}
@@ -319,11 +322,16 @@ details.devnote pre{margin:0 0 14px;font-family:var(--mono);font-size:11px;line-
 
       <div class="kicker" style="margin-top:26px" data-i18n="rosKicker">Run of show</div>
       <div class="agenda">
-        <div class="ag"><div class="t">18:00</div><div class="d" data-i18n="ag1">Boarding &amp; welcome drinks</div></div>
-        <div class="ag"><div class="t">18:30</div><div class="d" data-i18n="ag2">Cast off — Jakarta bay at golden hour</div></div>
-        <div class="ag"><div class="t">19:15</div><div class="d" data-i18n="ag3">Dinner service (your menu below)</div></div>
-        <div class="ag"><div class="t">20:30</div><div class="d" data-i18n="ag4">Juno program · "No random move"</div></div>
-        <div class="ag"><div class="t">22:00</div><div class="d" data-i18n="ag5">Return to marina</div></div>
+        <div class="ag"><div class="t">14:00–16:00 · <span data-i18n="ph1">ARRIVE</span></div><div class="d" data-i18n="ag1">Registration · Water Taxi Boarding · Welcome Drinks</div></div>
+        <div class="ag"><div class="t">16:00–19:00 · <span data-i18n="ph2">CONNECT</span></div><div class="d" data-i18n="ag2">Opening · Games · Sunset · Networking</div></div>
+        <div class="ag"><div class="t">19:00–20:35 · <span data-i18n="ph3">DINE</span></div><div class="d" data-i18n="ag3">Dinner · Business Presentation · Partner Stories</div></div>
+        <div class="ag"><div class="t">20:35–22:20 · <span data-i18n="ph4">CELEBRATE</span></div><div class="d" data-i18n="ag4">Games · Doorprize · Toast · Fireworks at 21:10 · Music &amp; Dance</div></div>
+        <div class="ag"><div class="t">22:20–23:30 · <span data-i18n="ph5">FAREWELL</span></div><div class="d" data-i18n="ag5">Group Photo · Offboarding</div></div>
+      </div>
+
+      <div class="keytimes">
+        <div class="kt-label" data-i18n="keyTimesLabel">Key times</div>
+        <div class="kt-strip" data-i18n="keyTimes">14:00 Registration · 15:00 Boarding · 16:00 Program Starts · 19:00 Dinner · 21:10 Fireworks · 22:20 Farewell</div>
       </div>
 
       <button class="btn btn-accept btn-lg cal-btn" data-i18n="btnCal" onclick="toggleCal()">＋ Add to calendar</button>
