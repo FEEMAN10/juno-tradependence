@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Juno Tradependence — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,300;0,400;0,500;0,600;0,700;0,900;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --orange:#E8690A; --orange-deep:#C45608; --ink:#0D0E10; --surface:#15171A;
+  --surface-2:#1c1f24; --line:rgba(237,237,234,.10); --line-2:rgba(237,237,234,.18);
+  --paper:#EDEDEA; --muted:#9a9ea6; --muted-2:#71757d;
+  --sans:'Source Sans 3',system-ui,sans-serif;
+  --ok:#3fae6b; --bad:#d8574f; --warn:#e0a53b; --shadow:0 18px 50px rgba(0,0,0,.55);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#050506;color:var(--paper);font-family:var(--sans);font-size:15px;line-height:1.5}
+a{color:var(--orange)}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select{font-family:inherit;font-size:14.5px;color:var(--paper);background:var(--surface);
+  border:1px solid var(--line-2);border-radius:10px;padding:11px 12px;width:100%}
+input:focus,select:focus{outline:none;border-color:var(--orange)}
+.wrap{max-width:1060px;margin:0 auto;padding:22px 18px 80px}
+.mono{font-variant-numeric:tabular-nums}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:600;font-size:14px;
+  padding:11px 18px;border-radius:11px;border:1px solid transparent;transition:.15s;white-space:nowrap}
+.btn-primary{background:var(--orange);color:#140b04}
+.btn-primary:hover{background:var(--orange-deep)}
+.btn-ghost{border-color:var(--line-2);color:var(--paper)}
+.btn-ghost:hover{border-color:var(--orange);color:var(--orange)}
+.btn-sm{padding:7px 11px;font-size:12.5px;border-radius:9px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+.muted{color:var(--muted)}
+.kick{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--orange)}
+
+/* login */
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+#login .card{width:100%;max-width:380px}
+#login h1{margin:6px 0 2px;font-size:24px;font-weight:700}
+.field{margin-top:14px}
+.field label{display:block;font-size:12px;letter-spacing:.04em;color:var(--muted);margin-bottom:6px;text-transform:uppercase}
+.err{color:var(--bad);font-size:13px;margin-top:12px;min-height:18px}
+
+/* app */
+#app{display:none}
+.top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+.top h1{margin:0;font-size:22px;font-weight:700}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.stat .n{font-size:26px;font-weight:700;line-height:1}
+.stat .l{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+.row .field{margin-top:0;flex:1;min-width:150px}
+.sec-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:26px 0 12px}
+.sec-title h2{margin:0;font-size:16px;font-weight:700}
+.table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:14px}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:13.5px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top;white-space:nowrap}
+th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--surface-2);position:sticky;top:0}
+tr:last-child td{border-bottom:none}
+.pill{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.03em;padding:3px 9px;border-radius:999px;text-transform:capitalize}
+.pill.accepted{background:rgba(63,174,107,.16);color:#7fd6a0}
+.pill.declined{background:rgba(216,87,79,.16);color:#e59790}
+.pill.pending{background:rgba(224,165,59,.16);color:#e7c079}
+.linkcell{display:flex;align-items:center;gap:6px}
+.linkcell code{font-size:11.5px;color:var(--muted);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.iconbtn{border:1px solid var(--line-2);border-radius:8px;padding:5px 8px;font-size:11.5px;color:var(--muted)}
+.iconbtn:hover{border-color:var(--orange);color:var(--orange)}
+.iconbtn.danger:hover{border-color:var(--bad);color:var(--bad)}
+.empty{padding:26px;text-align:center;color:var(--muted)}
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);z-index:80;
+  background:var(--surface-2);border:1px solid var(--line-2);padding:11px 18px;border-radius:11px;
+  font-size:13.5px;box-shadow:var(--shadow);opacity:0;transition:.28s;pointer-events:none;max-width:88%}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.warnbar{background:rgba(224,165,59,.12);border:1px solid rgba(224,165,59,.4);color:#e7c079;
+  border-radius:12px;padding:12px 14px;font-size:13.5px;margin-bottom:18px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<section id="login">
+  <div class="card">
+    <div class="kick">Juno Tradependence</div>
+    <h1>Admin sign in</h1>
+    <p class="muted" style="margin:2px 0 4px;font-size:13.5px">Manage guests, links & responses.</p>
+    <form id="loginForm">
+      <div class="field">
+        <label>Email</label>
+        <input id="email" type="email" autocomplete="username" required placeholder="you@junomarkets.com">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input id="password" type="password" autocomplete="current-password" required placeholder="••••••••">
+      </div>
+      <div class="err" id="loginErr"></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:6px" id="loginBtn" type="submit">Sign in</button>
+    </form>
+  </div>
+</section>
+
+<!-- DASHBOARD -->
+<section id="app"><div class="wrap">
+  <div class="top">
+    <div>
+      <div class="kick">Juno Tradependence — Admin</div>
+      <h1>Guest dashboard</h1>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost btn-sm" id="refreshBtn">↻ Refresh</button>
+      <button class="btn btn-ghost btn-sm" id="csvBtn">⤓ Export CSV</button>
+      <button class="btn btn-ghost btn-sm" id="signoutBtn">Sign out</button>
+    </div>
+  </div>
+
+  <div id="configWarn" class="warnbar" style="display:none">
+    ⚠ Supabase keys aren’t set in <code>config.js</code> — the dashboard can’t reach the backend.
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="card">
+    <div class="kick" style="margin-bottom:10px">Add a guest</div>
+    <form id="addForm" class="row">
+      <div class="field"><label>Guest name *</label><input id="gName" required placeholder="Mr. Andi Wijaya"></div>
+      <div class="field"><label>Seat / table</label><input id="gTitle" placeholder="Table 1"></div>
+      <div class="field"><label>Email (optional)</label><input id="gEmail" type="email" placeholder="andi@email.com"></div>
+      <button class="btn btn-primary" id="addBtn" type="submit">+ Add & make link</button>
+    </form>
+  </div>
+
+  <div class="sec-title">
+    <h2>Guests & responses <span class="muted mono" id="count"></span></h2>
+  </div>
+  <div class="table-scroll">
+    <table>
+      <thead><tr>
+        <th>Guest</th><th>Seat</th><th>RSVP</th><th>Main</th><th>Dessert</th><th>Beverage</th>
+        <th>Dietary</th><th>Personal link</th><th></th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+</div></section>
+
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
+<script>
+(function(){
+  var CFG = window.JUNO_CONFIG || {};
+  var LIVE = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY && window.supabase);
+  var sb = LIVE ? window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY) : null;
+
+  var $ = function(id){ return document.getElementById(id); };
+  function toast(m){ var t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(function(){t.classList.remove('show');},2200); }
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function linkFor(token){ return location.origin + '/?g=' + token; }
+
+  // ---- auth screens ----
+  function showLogin(){ $('login').style.display='flex'; $('app').style.display='none'; }
+  function showApp(){ $('login').style.display='none'; $('app').style.display='block'; if(!LIVE){ $('configWarn').style.display='block'; } load(); }
+
+  if(!LIVE){
+    // No backend configured — let them see the UI but explain.
+    $('loginErr').textContent = 'Backend not configured (config.js is blank).';
+  }
+
+  $('loginForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    if(!sb){ $('loginErr').textContent='Backend not configured.'; return; }
+    var btn=$('loginBtn'); btn.disabled=true; btn.textContent='Signing in…'; $('loginErr').textContent='';
+    sb.auth.signInWithPassword({ email:$('email').value.trim(), password:$('password').value })
+      .then(function(res){
+        btn.disabled=false; btn.textContent='Sign in';
+        if(res.error){ $('loginErr').textContent = res.error.message || 'Sign in failed.'; return; }
+        showApp();
+      })
+      .catch(function(err){ btn.disabled=false; btn.textContent='Sign in'; $('loginErr').textContent = (err&&err.message)||'Sign in failed.'; });
+  });
+
+  $('signoutBtn').addEventListener('click', function(){ if(sb) sb.auth.signOut().finally(showLogin); else showLogin(); });
+
+  // ---- data ----
+  var DATA = [];
+
+  function load(){
+    if(!sb) return;
+    sb.rpc('admin_list_invitations').then(function(res){
+      if(res.error){ toast('Load failed: '+res.error.message); if(/not authorized/i.test(res.error.message)) return; return; }
+      DATA = res.data || [];
+      render();
+    });
+  }
+
+  function render(){
+    // stats
+    var acc=0,dec=0,pen=0,sub=0, mains={};
+    DATA.forEach(function(r){
+      if(r.rsvp_status==='accepted') acc++; else if(r.rsvp_status==='declined') dec++; else pen++;
+      if(r.selection_at) sub++;
+      if(r.rsvp_status==='accepted' && r.main_course) mains[r.main_course]=(mains[r.main_course]||0)+1;
+    });
+    var mainStr = Object.keys(mains).map(function(k){return k+': '+mains[k];}).join(' · ') || '—';
+    $('stats').innerHTML =
+      stat(DATA.length,'Guests') + stat(acc,'Accepted') + stat(dec,'Declined') +
+      stat(pen,'Pending') + stat(sub,'Submitted');
+    $('count').textContent = DATA.length ? '('+DATA.length+')' : '';
+
+    // rows
+    if(!DATA.length){ $('rows').innerHTML = '<tr><td colspan="9"><div class="empty">No guests yet — add your first one above.</div></td></tr>'; return; }
+    $('rows').innerHTML = DATA.map(function(r){
+      var diet = r.dietary_flag ? (esc(r.dietary_note)||'yes') : '';
+      return '<tr>'+
+        '<td><strong>'+esc(r.guest_name)+'</strong>'+(r.email?'<div class="muted" style="font-size:11.5px">'+esc(r.email)+'</div>':'')+'</td>'+
+        '<td>'+esc(r.guest_title)+'</td>'+
+        '<td><span class="pill '+esc(r.rsvp_status)+'">'+esc(r.rsvp_status)+'</span></td>'+
+        '<td>'+esc(r.main_course)+'</td>'+
+        '<td>'+esc(r.dessert)+'</td>'+
+        '<td>'+esc(r.beverage)+'</td>'+
+        '<td>'+diet+'</td>'+
+        '<td><div class="linkcell"><code>?g='+esc(r.token)+'</code>'+
+          '<button class="iconbtn" data-copy="'+esc(linkFor(r.token))+'">Copy</button></div></td>'+
+        '<td style="text-align:right"><div style="display:inline-flex;gap:6px">'+
+          (r.selection_at?'<button class="iconbtn" data-reset="'+r.id+'" title="Let them re-pick">Reset</button>':'')+
+          '<button class="iconbtn danger" data-del="'+r.id+'" data-name="'+esc(r.guest_name)+'">Del</button>'+
+        '</div></td>'+
+      '</tr>';
+    }).join('');
+  }
+  function stat(n,l){ return '<div class="stat"><div class="n mono">'+n+'</div><div class="l">'+l+'</div></div>'; }
+
+  // ---- add guest ----
+  $('addForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    if(!sb){ toast('Backend not configured.'); return; }
+    var btn=$('addBtn'); btn.disabled=true; btn.textContent='Adding…';
+    sb.rpc('admin_add_guest', { p_name:$('gName').value, p_title:$('gTitle').value, p_email:$('gEmail').value })
+      .then(function(res){
+        btn.disabled=false; btn.textContent='+ Add & make link';
+        if(res.error){ toast('Add failed: '+res.error.message); return; }
+        $('gName').value=$('gTitle').value=$('gEmail').value='';
+        var row = res.data;
+        DATA.push(row); render();
+        var link = linkFor(row.token);
+        if(navigator.clipboard){ navigator.clipboard.writeText(link).then(function(){toast('Added — link copied to clipboard');},function(){toast('Added: '+link);}); }
+        else toast('Added: '+link);
+      })
+      .catch(function(err){ btn.disabled=false; btn.textContent='+ Add & make link'; toast('Add failed'); });
+  });
+
+  // ---- row actions (copy / delete / reset) ----
+  $('rows').addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    if(b.dataset.copy){
+      var v=b.dataset.copy;
+      if(navigator.clipboard) navigator.clipboard.writeText(v).then(function(){toast('Link copied');},function(){toast(v);});
+      else toast(v);
+    } else if(b.dataset.del){
+      if(!confirm('Delete '+b.dataset.name+'? This removes their row and response.')) return;
+      sb.rpc('admin_delete_guest',{p_id:b.dataset.del}).then(function(res){
+        if(res.error){ toast('Delete failed: '+res.error.message); return; }
+        DATA = DATA.filter(function(r){return r.id!==b.dataset.del;}); render(); toast('Deleted');
+      });
+    } else if(b.dataset.reset){
+      if(!confirm('Reset this guest’s meal choice so they can pick again?')) return;
+      sb.rpc('admin_reset_selection',{p_id:b.dataset.reset}).then(function(res){
+        if(res.error){ toast('Reset failed: '+res.error.message); return; }
+        toast('Choice reset'); load();
+      });
+    }
+  });
+
+  // ---- refresh / csv ----
+  $('refreshBtn').addEventListener('click', function(){ load(); toast('Refreshed'); });
+  $('csvBtn').addEventListener('click', function(){
+    var head=['guest_name','seat','email','rsvp_status','main_course','dessert','beverage','dietary','link'];
+    var lines=[head.join(',')];
+    DATA.forEach(function(r){
+      var diet=r.dietary_flag?(r.dietary_note||'yes'):'';
+      var cells=[r.guest_name,r.guest_title,r.email,r.rsvp_status,r.main_course,r.dessert,r.beverage,diet,linkFor(r.token)];
+      lines.push(cells.map(function(c){ c=(c==null?'':String(c)); return /[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c; }).join(','));
+    });
+    var blob=new Blob([lines.join('\n')],{type:'text/csv'});
+    var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='juno-guests.csv'; a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
+  });
+
+  // ---- boot: resume session if already signed in ----
+  if(sb){
+    sb.auth.getSession().then(function(res){
+      if(res.data && res.data.session) showApp(); else showLogin();
+    }).catch(showLogin);
+  } else {
+    showLogin();
+  }
+})();
+</script>
+</body>
+</html>
