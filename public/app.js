@@ -43,6 +43,9 @@ var I18N={
   proh1:'Weapons or sharp objects', proh2:'Explosives, fireworks or flammable materials', proh3:'Illegal drugs or controlled substances', proh4:'Outside alcohol <small>(fully hosted on board)</small>', proh5:'Drones <small>without prior approval</small>',
   prohThanks:'Thank you for your cooperation.',
   closeH:'Join us for an evening where every move has a reason. See you on board.', shareBtn:'↗ Share this invitation',
+  shareKicker:'You’re on the list', shareLede:'Save your card and share it to your story.',
+  shareImg:'↗ Share my card', shareDl:'⤓ Save image',
+  shareCardKicker:'Will be aboard', shareCardDate:'Jakarta Phinisi · 18 August 2026',
   /* dynamic */
   stAcc:'✓ You’re on the list — we can’t wait', stDec:'You’ve declined — we’ll miss you. Tap to change ↺',
   toAcc:'Wonderful — now choose your menu below ↓', toDec:'RSVP saved. You can change it any time.',
@@ -92,6 +95,9 @@ var I18N={
   proh1:'Senjata atau benda tajam', proh2:'Bahan peledak, kembang api, atau mudah terbakar', proh3:'Narkoba atau zat terlarang', proh4:'Minuman beralkohol dari luar <small>(tersedia lengkap di kapal)</small>', proh5:'Drone <small>tanpa izin sebelumnya</small>',
   prohThanks:'Terima kasih atas kerja samanya.',
   closeH:'Bergabunglah di malam di mana setiap langkah punya alasan. Sampai jumpa di kapal.', shareBtn:'↗ Bagikan undangan ini',
+  shareKicker:'Kamu terdaftar', shareLede:'Simpan kartu ini dan bagikan ke story kamu.',
+  shareImg:'↗ Bagikan kartu', shareDl:'⤓ Simpan gambar',
+  shareCardKicker:'Akan hadir', shareCardDate:'Jakarta Phinisi · 18 Agustus 2026',
   stAcc:'✓ Anda terdaftar — sampai jumpa di kapal', stDec:'Anda berhalangan — kami akan merindukan Anda. Ketuk untuk ubah ↺',
   toAcc:'Luar biasa — silakan pilih menu Anda di bawah ↓', toDec:'RSVP tersimpan. Dapat diubah kapan saja.',
   toNeedRsvp:'Silakan konfirmasi kehadiran terlebih dahulu', toNeedFields:'Pilih hidangan utama, penutup & minuman', toSent:'Terkirim ke katering ✓',
@@ -134,6 +140,7 @@ function reflectRsvp(v){                     // show a saved RSVP without re-wri
   document.getElementById('rsvpBlock').style.display='none';
   document.getElementById('rsvpState').classList.add('show');
   document.getElementById('mealLock').classList.toggle('gone',v==='accept');
+  if(v==='accept') showShare(); else hideShare();
   refreshRsvpText();
 }
 
@@ -155,6 +162,7 @@ function setLang(l){
   refreshRsvpText();
   if(document.getElementById('mealDone').classList.contains('show')) document.getElementById('summary').innerHTML=summaryHTML();
   if(document.getElementById('confirmModal').classList.contains('show')) document.getElementById('cmSummary').innerHTML=summaryHTML();
+  var sw=document.getElementById('shareWrap'); if(sw&&sw.style.display!=='none') buildShareCard();
 }
 function chooseLang(l){
   setLang(l);
@@ -188,10 +196,12 @@ function setRsvp(v){
   document.getElementById('rsvpState').classList.add('show');
   if(v==='accept'){
     document.getElementById('mealLock').classList.add('gone');
+    showShare();
     toast(I18N[STATE.lang].toAcc);
     setTimeout(function(){document.getElementById('meal').scrollIntoView({behavior:'smooth'});},650);
   }else{
     document.getElementById('mealLock').classList.remove('gone');
+    hideShare();
     toast(I18N[STATE.lang].toDec);
   }
   if(LIVE) sb.rpc('set_rsvp',{p_token:currentToken(),p_status:v==='accept'?'accepted':'declined'})
@@ -212,6 +222,7 @@ function undoRsvp(){
   document.getElementById('rsvpBlock').style.display='block';
   document.getElementById('rsvpState').classList.remove('show');
   document.getElementById('mealLock').classList.remove('gone');
+  hideShare();
 }
 
 /* ============ pickers ============ */
@@ -251,6 +262,7 @@ function showDone(){
   document.getElementById('mealForm').style.display='none';
   document.getElementById('mealLock').classList.add('gone');
   document.getElementById('mealDone').classList.add('show');
+  showShare();
   toast(d.toSent);
   document.getElementById('meal').scrollIntoView({behavior:'smooth'});
 }
@@ -282,11 +294,79 @@ function toggleCal(){
   document.getElementById('icsLink').href='data:text/calendar;charset=utf-8,'+encodeURIComponent(ics);
 }
 
-/* ============ share ============ */
-function doShare(){
-  var d={title:EV.title,text:I18N[STATE.lang].shareText,url:location.href};
-  if(navigator.share){navigator.share(d).catch(function(){});}else{toast(location.href);}
+/* ============ shareable card (accepted guests only) ============ */
+var _shareImgs=null;
+function _loadImg(src){return new Promise(function(res){var i=new Image();i.onload=function(){res(i);};i.onerror=function(){res(null);};i.src=src;});}
+function _loadShareAssets(){
+  if(_shareImgs) return Promise.resolve(_shareImgs);
+  return Promise.all([_loadImg('assets/bg.jpg'),_loadImg('assets/badge.png'),_loadImg('assets/tagline.png'),_loadImg('assets/wordmark.png')])
+    .then(function(a){_shareImgs={bg:a[0],badge:a[1],tag:a[2],mark:a[3]};return _shareImgs;});
 }
+function _drawCover(ctx,img,x,y,w,h){
+  var ir=img.width/img.height, r=w/h, sw,sh,sx,sy;
+  if(ir>r){sh=img.height;sw=sh*r;sx=(img.width-sw)/2;sy=0;}else{sw=img.width;sh=sw/r;sx=0;sy=(img.height-sh)/2;}
+  ctx.drawImage(img,sx,sy,sw,sh,x,y,w,h);
+}
+function _fitText(ctx,text,max,base,weight){
+  var size=base;
+  do{ctx.font=weight+' '+size+'px "Source Sans 3",system-ui,sans-serif';if(ctx.measureText(text).width<=max)break;size-=3;}while(size>28);
+  return size;
+}
+function buildShareCard(){
+  var c=document.getElementById('shareCanvas'); if(!c) return Promise.resolve();
+  var name=(document.getElementById('dearGuest').textContent||'').trim();
+  var d=I18N[STATE.lang];
+  var fontReady = (document.fonts&&document.fonts.load)
+    ? Promise.all([document.fonts.load('700 70px "Source Sans 3"'),document.fonts.load('600 28px "Source Sans 3"'),document.fonts.load('400 30px "Source Sans 3"')]).catch(function(){})
+    : Promise.resolve();
+  return Promise.all([_loadShareAssets(),fontReady]).then(function(r){
+    var A=r[0], ctx=c.getContext('2d'), W=c.width, H=c.height;
+    // background
+    ctx.fillStyle='#0B0C0E'; ctx.fillRect(0,0,W,H);
+    if(A.bg){ _drawCover(ctx,A.bg,0,0,W,H); ctx.fillStyle='rgba(9,10,12,.74)'; ctx.fillRect(0,0,W,H); }
+    // orange glow at top
+    var g=ctx.createRadialGradient(W/2,H*0.30,60,W/2,H*0.30,W*0.72);
+    g.addColorStop(0,'rgba(232,105,10,.22)'); g.addColorStop(1,'rgba(232,105,10,0)');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    // border frame
+    ctx.strokeStyle='rgba(237,237,234,.16)'; ctx.lineWidth=3; ctx.strokeRect(34,34,W-68,H-68);
+    // badge hero
+    if(A.badge){ var bw=W*0.80, bh=A.badge.height*(bw/A.badge.width); ctx.drawImage(A.badge,(W-bw)/2,H*0.085,bw,bh); }
+    ctx.textAlign='center';
+    // kicker + date (orange)
+    ctx.fillStyle='#F08A2E'; ctx.font='600 27px "Source Sans 3",system-ui,sans-serif';
+    ctx.fillText((d.shareCardKicker||'Will be aboard').toUpperCase(), W/2, H*0.615);
+    // guest name (big, auto-fit)
+    var ns=_fitText(ctx,name,W*0.84,72,'700');
+    ctx.fillStyle='#F4F4F1'; ctx.font='700 '+ns+'px "Source Sans 3",system-ui,sans-serif';
+    ctx.fillText(name, W/2, H*0.615+ns+18);
+    // date line
+    ctx.fillStyle='#c9ccd1'; ctx.font='400 30px "Source Sans 3",system-ui,sans-serif';
+    ctx.fillText(d.shareCardDate||'Jakarta Phinisi · 18 August 2026', W/2, H*0.615+ns+66);
+    // tagline image
+    if(A.tag){ var tw=W*0.48, th=A.tag.height*(tw/A.tag.width); ctx.globalAlpha=.92; ctx.drawImage(A.tag,(W-tw)/2,H*0.80,tw,th); ctx.globalAlpha=1; }
+    // wordmark
+    if(A.mark){ var mw=W*0.20, mh=A.mark.height*(mw/A.mark.width); ctx.globalAlpha=.8; ctx.drawImage(A.mark,(W-mw)/2,H*0.905,mw,mh); ctx.globalAlpha=1; }
+  });
+}
+function _cardBlob(){ return new Promise(function(res){ var c=document.getElementById('shareCanvas'); if(!c||!c.toBlob){res(null);return;} c.toBlob(function(b){res(b);},'image/png',0.95); }); }
+function shareCard(){
+  buildShareCard().then(_cardBlob).then(function(blob){
+    if(!blob){ toast('Could not build image'); return; }
+    var file=new File([blob],'juno-tradependence-2026.png',{type:'image/png'});
+    var data={files:[file],title:EV.title,text:I18N[STATE.lang].shareText};
+    if(navigator.canShare&&navigator.canShare({files:[file]})&&navigator.share){
+      navigator.share(data).catch(function(){});
+    }else{ _saveBlob(blob); toast(I18N[STATE.lang].shareDl); }
+  });
+}
+function downloadCard(){ buildShareCard().then(_cardBlob).then(function(b){ if(b) _saveBlob(b); }); }
+function _saveBlob(blob){
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='juno-tradependence-2026.png';
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){URL.revokeObjectURL(a.href);},1500);
+}
+function showShare(){ var w=document.getElementById('shareWrap'); if(!w)return; w.style.display='block'; buildShareCard(); }
+function hideShare(){ var w=document.getElementById('shareWrap'); if(w) w.style.display='none'; }
 
 /* ============ utils ============ */
 function esc(s){return String(s).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]});}

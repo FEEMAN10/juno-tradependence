@@ -217,6 +217,14 @@ details.devnote pre{margin:0 0 14px;font-family:var(--mono);font-size:11px;line-
 .closing h2{max-width:300px;margin:0 auto}
 .tagline-img{width:190px;margin:26px auto 0;opacity:.9}
 .share-btn{margin:30px auto 0;max-width:260px}
+.share-wrap{margin:34px auto 0;max-width:340px}
+.share-kick{justify-content:center}
+.share-lede{font-size:13.5px;color:var(--muted);margin:6px 0 0}
+.share-card{width:100%;max-width:300px;height:auto;display:block;margin:16px auto 0;border-radius:18px;border:1px solid var(--line-2);box-shadow:var(--shadow)}
+.share-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.share-do{font-size:14px;padding:12px 20px}
+.share-dl-btn{font-size:14px;padding:12px 20px;font-weight:600;border:1px solid var(--line-2);color:var(--paper)}
+.share-dl-btn:hover{border-color:var(--orange);color:var(--orange)}
 .foot-mark{margin:40px auto 0;width:120px;opacity:.7}
 .foot-fine{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--muted-2);margin-top:16px;text-transform:uppercase}
 
@@ -480,7 +488,16 @@ details.devnote pre{margin:0 0 14px;font-family:var(--mono);font-size:11px;line-
       <img class="coin" src="assets/coin.png" alt="Juno">
       <h2 data-i18n="closeH">Join us for an evening where every move has a reason. See you on board.</h2>
       <img class="tagline-img" src="assets/tagline.png" alt="No Random Move">
-      <button class="btn btn-accept btn-lg share-btn" data-i18n="shareBtn" onclick="doShare()">↗ Share this invitation</button>
+      <!-- Shareable card — only shown once the guest has ACCEPTED -->
+      <div class="share-wrap" id="shareWrap" style="display:none">
+        <div class="kicker share-kick" data-i18n="shareKicker">You’re on the list</div>
+        <p class="lede share-lede" data-i18n="shareLede">Save your card and share it to your story.</p>
+        <canvas id="shareCanvas" class="share-card" width="1080" height="1350" aria-label="Your Tradependence Day card"></canvas>
+        <div class="share-actions">
+          <button class="btn btn-accept share-do" id="shareImgBtn" data-i18n="shareImg" onclick="shareCard()">↗ Share my card</button>
+          <button class="btn share-dl-btn" id="dlImgBtn" data-i18n="shareDl" onclick="downloadCard()">⤓ Save image</button>
+        </div>
+      </div>
       <img class="foot-mark" src="assets/wordmark.png" alt="Juno">
       <div class="foot-fine">Tradependence Day · Jakarta · MMXXVI</div>
     </section>
