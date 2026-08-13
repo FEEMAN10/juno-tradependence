@@ -144,7 +144,7 @@ function reflectRsvp(v){                     // show a saved RSVP without re-wri
   document.getElementById('rsvpBlock').style.display='none';
   document.getElementById('rsvpState').classList.add('show');
   document.getElementById('mealLock').classList.toggle('gone',v==='accept');
-  if(v==='accept') showShare(); else hideShare();
+  if(v==='accept'){ showShare(); if(!STATE.locked) setFoodPending(true); } else { hideShare(); setFoodPending(false); }
   refreshRsvpText();
 }
 
@@ -201,11 +201,13 @@ function setRsvp(v){
   if(v==='accept'){
     document.getElementById('mealLock').classList.add('gone');
     showShare();
+    if(!STATE.locked) setFoodPending(true);
     toast(I18N[STATE.lang].toAcc);
-    setTimeout(function(){document.getElementById('meal').scrollIntoView({behavior:'smooth'});},650);
+    setTimeout(function(){ jumpToFood(); },650);
   }else{
     document.getElementById('mealLock').classList.remove('gone');
     hideShare();
+    setFoodPending(false);
     toast(I18N[STATE.lang].toDec);
   }
   if(LIVE) sb.rpc('set_rsvp',{p_token:currentToken(),p_status:v==='accept'?'accepted':'declined'})
@@ -227,6 +229,7 @@ function undoRsvp(){
   document.getElementById('rsvpState').classList.remove('show');
   document.getElementById('mealLock').classList.remove('gone');
   hideShare();
+  setFoodPending(false);
 }
 
 /* ============ pickers ============ */
@@ -267,6 +270,7 @@ function showDone(){
   document.getElementById('mealLock').classList.add('gone');
   document.getElementById('mealDone').classList.add('show');
   showShare();
+  setFoodPending(false);
   toast(d.toSent);
   document.getElementById('meal').scrollIntoView({behavior:'smooth'});
 }
@@ -426,6 +430,16 @@ function _saveBlob(blob){
 }
 function showShare(){ var w=document.getElementById('shareWrap'); if(!w)return; w.style.display='block'; _initShareOpts(); buildShareCard(); }
 function hideShare(){ var w=document.getElementById('shareWrap'); if(w) w.style.display='none'; }
+
+/* ============ nudge guests to complete their meal choice ============ */
+function jumpToFood(){
+  var m=document.getElementById('meal'); if(!m) return;
+  m.scrollIntoView({behavior:'smooth',block:'start'});
+  var f=document.getElementById('mealForm');
+  if(f){ f.classList.remove('attn'); void f.offsetWidth; f.classList.add('attn');
+    setTimeout(function(){ f.classList.remove('attn'); },4000); }
+}
+function setFoodPending(on){ var s=document.querySelector('.jstep[data-target="meal"]'); if(s) s.classList.toggle('pending',!!on); }
 
 /* ============ utils ============ */
 function esc(s){return String(s).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]});}
