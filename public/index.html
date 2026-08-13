@@ -71,8 +71,22 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   radial-gradient(120% 60% at 50% 0%,rgba(232,105,10,.16),transparent 60%),
   linear-gradient(180deg,rgba(5,5,6,.55),rgba(5,5,6,.86) 45%,var(--ink) 92%)}
 
-.topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;gap:8px;
+.topbar{position:relative;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:8px;
   padding:12px 16px;background:linear-gradient(180deg,rgba(13,14,16,.92),rgba(13,14,16,0));backdrop-filter:blur(4px)}
+
+/* ---- journey / jump nav ---- */
+.journey{position:sticky;top:0;z-index:29;background:rgba(9,10,12,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.journey-track{display:flex;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;padding:11px 14px 10px}
+.journey-track::-webkit-scrollbar{display:none}
+.jstep{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:60px;position:relative;background:none;padding:0}
+.jstep:not(:last-child):after{content:"";position:absolute;top:12px;left:calc(50% + 14px);width:calc(100% - 28px);height:1.5px;background:var(--line-2);transition:background .2s}
+.jstep .jn{width:25px;height:25px;border-radius:50%;border:1.5px solid var(--line-2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--ink);transition:.18s;position:relative;z-index:1}
+.jstep .jl{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);white-space:nowrap;transition:.18s}
+.jstep.done .jn{border-color:var(--orange);color:var(--orange)}
+.jstep.done:not(:last-child):after{background:var(--orange)}
+.jstep.active .jn{background:var(--orange);border-color:var(--orange);color:#140b04;font-weight:700;box-shadow:0 0 0 4px rgba(232,105,10,.18)}
+.jstep.active .jl{color:var(--paper)}
+#hero,#rundown,#map,#meal,#dress,#prohibited{scroll-margin-top:74px}
 .topbar img.mark{height:20px;width:auto}
 .lang-toggle{display:flex;border:1px solid var(--line-2);border-radius:999px;overflow:hidden}
 .lang-toggle button{font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;padding:5px 10px;color:var(--muted)}
@@ -305,6 +319,18 @@ details.devnote pre{margin:0 0 14px;font-family:var(--mono);font-size:11px;line-
       <div class="top-guest"><span data-i18n="topLabel">Invitation for</span><b id="topGuest">Mr. Andi Wijaya</b></div>
     </div>
 
+    <!-- JOURNEY / JUMP NAV -->
+    <nav class="journey" id="journey" aria-label="Jump to section">
+      <div class="journey-track" id="journeyTrack">
+        <button class="jstep" data-target="hero"><span class="jn">1</span><span class="jl" data-i18n="navAttend">Attendance</span></button>
+        <button class="jstep" data-target="rundown"><span class="jn">2</span><span class="jl" data-i18n="navRundown">Rundown</span></button>
+        <button class="jstep" data-target="map"><span class="jn">3</span><span class="jl" data-i18n="navMap">Map</span></button>
+        <button class="jstep" data-target="meal"><span class="jn">4</span><span class="jl" data-i18n="navFood">Food</span></button>
+        <button class="jstep" data-target="dress"><span class="jn">5</span><span class="jl" data-i18n="navDress">Dress</span></button>
+        <button class="jstep" data-target="prohibited"><span class="jn">6</span><span class="jl" data-i18n="navSafety">Safety</span></button>
+      </div>
+    </nav>
+
     <!-- HERO -->
     <section class="hero" id="hero">
       <img class="badge" src="assets/badge.png" alt="Tradependence Day 2026">
@@ -337,7 +363,7 @@ details.devnote pre{margin:0 0 14px;font-family:var(--mono);font-size:11px;line-
         <div class="info-row"><div class="info-ico">👔</div><div><div class="k" data-i18n="kDress">Dress code</div><div class="v" data-i18n="vDress">Modern Explorer — see below</div></div></div>
       </div>
 
-      <div class="kicker" style="margin-top:26px" data-i18n="rosKicker">Run of show</div>
+      <div class="kicker" id="rundown" style="margin-top:26px" data-i18n="rosKicker">Run of show</div>
       <div class="agenda">
         <div class="ag"><div class="t">14:00–16:00 · <span data-i18n="ph1">ARRIVE</span></div><div class="d" data-i18n="ag1">Registration · Water Taxi Boarding · Welcome Drinks</div></div>
         <div class="ag"><div class="t">16:00–19:00 · <span data-i18n="ph2">CONNECT</span></div><div class="d" data-i18n="ag2">Opening · Games · Sunset · Networking</div></div>
@@ -356,7 +382,7 @@ details.devnote pre{margin:0 0 14px;font-family:var(--mono);font-size:11px;line-
         <a class="cal-opt" id="gcalLink" target="_blank" rel="noopener"><span class="em">📅</span> Google Calendar</a>
         <a class="cal-opt" id="icsLink" download="juno-tradependence-2026.ics"><span class="em">🍎</span> Apple / Outlook (.ics)</a>
       </div>
-      <div class="mapembed">
+      <div class="mapembed" id="map">
         <iframe title="Boarding point — Dermaga Baywalk Mall" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps?q=-6.1073116,106.7797385&z=16&output=embed"></iframe>
         <div class="map-cap"><span class="pin">📍</span> <span data-i18n="mapCap">Dermaga Baywalk Mall — jetty to Pulau Seribu</span></div>
       </div>

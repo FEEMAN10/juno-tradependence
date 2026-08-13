@@ -44,6 +44,7 @@ var I18N={
   prohThanks:'Thank you for your cooperation.',
   closeH:'Join us for an evening where every move has a reason. See you on board.', shareBtn:'↗ Share this invitation',
   shareKicker:'You’re on the list', shareLede:'Save your card and share it to your story.',
+  navAttend:'Attend', navRundown:'Rundown', navMap:'Map', navFood:'Food', navDress:'Dress', navSafety:'Safety',
   shareImg:'↗ Share my card', shareDl:'⤓ Save image', shareFmt:'Size', shareStyle:'Style',
   shareLede2:'Pick a size and style, then share it to your story.',
   shareCardKicker:'See you on board', shareCardDate:'Jakarta Phinisi · 18 August 2026',
@@ -97,6 +98,7 @@ var I18N={
   prohThanks:'Terima kasih atas kerja samanya.',
   closeH:'Bergabunglah di malam di mana setiap langkah punya alasan. Sampai jumpa di kapal.', shareBtn:'↗ Bagikan undangan ini',
   shareKicker:'Kamu terdaftar', shareLede:'Simpan kartu ini dan bagikan ke story kamu.',
+  navAttend:'Hadir', navRundown:'Acara', navMap:'Peta', navFood:'Menu', navDress:'Busana', navSafety:'Aman',
   shareImg:'↗ Bagikan kartu', shareDl:'⤓ Simpan gambar', shareFmt:'Ukuran', shareStyle:'Gaya',
   shareLede2:'Pilih ukuran dan gaya, lalu bagikan ke story kamu.',
   shareCardKicker:'Sampai jumpa di kapal', shareCardDate:'Jakarta Phinisi · 18 Agustus 2026',
@@ -429,6 +431,26 @@ function hideShare(){ var w=document.getElementById('shareWrap'); if(w) w.style.
 function esc(s){return String(s).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]});}
 var toastT;
 function toast(m){var t=document.getElementById('toast');t.innerHTML=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('show')},2600);}
+
+/* ============ journey / jump nav ============ */
+function initJourney(){
+  var track=document.getElementById('journeyTrack'); if(!track||track._wired) return; track._wired=1;
+  var root=document.getElementById('scroll');
+  var steps=[].slice.call(track.querySelectorAll('.jstep'));
+  var ids=steps.map(function(s){return s.dataset.target;});
+  function navLine(){ var j=document.getElementById('journey'); var rt=root?root.getBoundingClientRect().top:0; return rt+(j?j.offsetHeight:48)+10; }
+  function centerChip(a){ if(!a)return; var tr=track.getBoundingClientRect(), ar=a.getBoundingClientRect();
+    track.scrollTo({left:track.scrollLeft+(ar.left-tr.left)-tr.width/2+ar.width/2,behavior:'smooth'}); }
+  function setActive(idx){ steps.forEach(function(s,i){ s.classList.toggle('active',i===idx); s.classList.toggle('done',i<idx); }); centerChip(steps[idx]); }
+  function currentIdx(){ var line=navLine(), idx=0; ids.forEach(function(id,i){ var el=document.getElementById(id); if(el && el.getBoundingClientRect().top-line<=1) idx=i; }); return idx; }
+  track.addEventListener('click',function(e){ var b=e.target.closest('.jstep'); if(!b)return;
+    var el=document.getElementById(b.dataset.target); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); });
+  var ticking=false;
+  (root||window).addEventListener('scroll',function(){ if(ticking)return; ticking=true;
+    requestAnimationFrame(function(){ ticking=false; setActive(currentIdx()); }); },{passive:true});
+  setActive(0);
+}
+initJourney();
 
 /* init toggle highlight (default en) */
 document.querySelector('.lang-toggle button[data-l="en"]').classList.add('on');
