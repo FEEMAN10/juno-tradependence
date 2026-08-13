@@ -54,7 +54,7 @@ var I18N={
   toAcc:'Wonderful — now choose your menu below ↓', toDec:'RSVP saved. You can change it any time.',
   toNeedRsvp:'Please accept your invitation first', toNeedFields:'Please choose main, dessert & beverage', toSent:'Sent to catering ✓',
   sumGuest:'Guest', sumMain:'Main course', sumDessert:'Dessert', sumBeverage:'Beverage', sumDietary:'Dietary',
-  dietNoneVal:'None', dietYesUnspec:'Yes (unspecified)', shareText:'Join us aboard the Jakarta Phinisi — Juno Tradependence Day 2026.', soundOff:'Sound off', soundOn:'Sound on', skip:'Skip', tapPlay:'Tap to play'
+  dietNoneVal:'None', dietYesUnspec:'Yes (unspecified)', shareText:'Join us aboard the Jakarta Phinisi — Juno Tradependence Day 2026.', soundOff:'Sound off', soundOn:'Sound on', skip:'Skip', tapPlay:'Tap for sound 🔊'
  },
  id:{
   topLabel:'Undangan untuk',
@@ -108,7 +108,7 @@ var I18N={
   toAcc:'Luar biasa — silakan pilih menu Anda di bawah ↓', toDec:'RSVP tersimpan. Dapat diubah kapan saja.',
   toNeedRsvp:'Silakan konfirmasi kehadiran terlebih dahulu', toNeedFields:'Pilih hidangan utama, penutup & minuman', toSent:'Terkirim ke katering ✓',
   sumGuest:'Tamu', sumMain:'Hidangan utama', sumDessert:'Penutup', sumBeverage:'Minuman', sumDietary:'Diet',
-  dietNoneVal:'Tidak ada', dietYesUnspec:'Ya (tanpa detail)', shareText:'Bergabunglah bersama kami di Jakarta Phinisi — Juno Tradependence Day 2026.', soundOff:'Suara mati', soundOn:'Suara nyala', skip:'Lewati', tapPlay:'Ketuk untuk memutar'
+  dietNoneVal:'Tidak ada', dietYesUnspec:'Ya (tanpa detail)', shareText:'Bergabunglah bersama kami di Jakarta Phinisi — Juno Tradependence Day 2026.', soundOff:'Suara mati', soundOn:'Suara nyala', skip:'Lewati', tapPlay:'Ketuk untuk suara 🔊'
  }
 };
 
@@ -163,7 +163,6 @@ function setLang(l){
   });
   document.querySelectorAll('.lang-toggle button').forEach(function(b){b.classList.toggle('on',b.dataset.l===l);});
   document.getElementById('soundLabel').textContent=vid&&!vid.muted?d.soundOn:d.soundOff;
-  document.getElementById('skipLabel').textContent=d.skip;
   document.getElementById('tapLabel').textContent=d.tapPlay;
   refreshRsvpText();
   if(document.getElementById('mealDone').classList.contains('show')) document.getElementById('summary').innerHTML=summaryHTML();
@@ -175,7 +174,10 @@ function chooseLang(l){
   var g=document.getElementById('langGate');
   g.classList.add('hide'); setTimeout(function(){g.style.display='none';},500);
   autoplay();
-  setTimeout(endSplash,12000);
+  // Safety net only: end when the clip finishes ('ended'); this guards against a
+  // stalled video so the guest is never stuck. Based on the clip's real length.
+  var safety=(vid.duration&&isFinite(vid.duration))?vid.duration*1000+2500:30000;
+  setTimeout(endSplash,safety);
 }
 
 /* ============ splash ============ */
@@ -185,15 +187,26 @@ var splashDone=false;
 function endSplash(){if(splashDone)return;splashDone=true;splash.classList.add('hide');setTimeout(function(){splash.style.display='none'},750);}
 vid.addEventListener('ended',endSplash);
 vid.addEventListener('error',endSplash);
-document.getElementById('skipBtn').addEventListener('click',function(e){e.stopPropagation();endSplash();});
+function updateSoundUI(){
+  var on=!vid.muted, b=document.getElementById('soundBtn'), l=document.getElementById('soundLabel');
+  if(b&&b.firstChild) b.firstChild.nodeValue=on?'🔊 ':'🔇 ';
+  if(l) l.textContent=on?I18N[STATE.lang].soundOn:I18N[STATE.lang].soundOff;
+}
 soundBtn.addEventListener('click',function(e){
-  e.stopPropagation(); vid.muted=!vid.muted;
-  document.getElementById('soundLabel').textContent=vid.muted?I18N[STATE.lang].soundOff:I18N[STATE.lang].soundOn;
-  if(vid.paused)vid.play();
+  e.stopPropagation(); vid.muted=!vid.muted; if(vid.paused)vid.play(); updateSoundUI();
 });
-function autoplay(){vid.muted=true;var pr=vid.play();if(pr&&pr.catch)pr.catch(function(){tap.classList.add('show');});}
-tap.addEventListener('click',function(){tap.classList.remove('show');vid.muted=false;
-  document.getElementById('soundLabel').textContent=I18N[STATE.lang].soundOn;vid.play();});
+// Play WITH sound (the language tap is a user gesture, so audio is allowed).
+// If a browser still blocks it, fall back to muted playback + a "tap for sound" prompt.
+function autoplay(){
+  vid.muted=false;
+  var pr=vid.play();
+  if(pr&&pr.catch)pr.catch(function(){
+    vid.muted=true; updateSoundUI(); tap.classList.add('show');
+    var mp=vid.play(); if(mp&&mp.catch)mp.catch(function(){});
+  });
+  updateSoundUI();
+}
+tap.addEventListener('click',function(){tap.classList.remove('show');vid.muted=false;vid.play();updateSoundUI();});
 
 /* ============ RSVP ============ */
 function setRsvp(v){
