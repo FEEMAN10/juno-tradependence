@@ -220,7 +220,16 @@ details.devnote pre{margin:0 0 14px;font-family:var(--mono);font-size:11px;line-
 .share-wrap{margin:34px auto 0;max-width:340px}
 .share-kick{justify-content:center}
 .share-lede{font-size:13.5px;color:var(--muted);margin:6px 0 0}
-.share-card{width:100%;max-width:300px;height:auto;display:block;margin:16px auto 0;border-radius:18px;border:1px solid var(--line-2);box-shadow:var(--shadow)}
+.share-opts{margin:16px auto 0;display:flex;flex-direction:column;gap:10px}
+.opt-line{display:flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap}
+.opt-lab{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);min-width:38px;text-align:right}
+.chips{display:inline-flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.schip{font-size:12.5px;font-weight:600;letter-spacing:.02em;color:var(--muted);border:1px solid var(--line-2);border-radius:999px;padding:7px 13px;transition:.15s}
+.schip small{font-weight:400;font-size:10px;color:var(--muted-2);letter-spacing:.04em}
+.schip:hover{border-color:var(--orange);color:var(--paper)}
+.schip.on{background:var(--orange);border-color:var(--orange);color:#140b04}
+.schip.on small{color:rgba(20,11,4,.7)}
+.share-card{width:100%;max-width:290px;height:auto;display:block;margin:16px auto 0;border-radius:18px;border:1px solid var(--line-2);box-shadow:var(--shadow)}
 .share-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px}
 .share-do{font-size:14px;padding:12px 20px}
 .share-dl-btn{font-size:14px;padding:12px 20px;font-weight:600;border:1px solid var(--line-2);color:var(--paper)}
@@ -491,7 +500,25 @@ details.devnote pre{margin:0 0 14px;font-family:var(--mono);font-size:11px;line-
       <!-- Shareable card — only shown once the guest has ACCEPTED -->
       <div class="share-wrap" id="shareWrap" style="display:none">
         <div class="kicker share-kick" data-i18n="shareKicker">You’re on the list</div>
-        <p class="lede share-lede" data-i18n="shareLede">Save your card and share it to your story.</p>
+        <p class="lede share-lede" data-i18n="shareLede2">Pick a size and style, then share it to your story.</p>
+
+        <div class="share-opts">
+          <div class="opt-line"><span class="opt-lab" data-i18n="shareFmt">Size</span>
+            <div class="chips" id="ratioRow">
+              <button class="schip on" data-ratio="4:5">4:5 <small>Feed</small></button>
+              <button class="schip" data-ratio="1:1">1:1 <small>Post</small></button>
+              <button class="schip" data-ratio="9:16">9:16 <small>Story</small></button>
+            </div>
+          </div>
+          <div class="opt-line"><span class="opt-lab" data-i18n="shareStyle">Style</span>
+            <div class="chips" id="styleRow">
+              <button class="schip on" data-style="signature">Signature</button>
+              <button class="schip" data-style="noir">Noir</button>
+              <button class="schip" data-style="ember">Ember</button>
+            </div>
+          </div>
+        </div>
+
         <canvas id="shareCanvas" class="share-card" width="1080" height="1350" aria-label="Your Tradependence Day card"></canvas>
         <div class="share-actions">
           <button class="btn btn-accept share-do" id="shareImgBtn" data-i18n="shareImg" onclick="shareCard()">↗ Share my card</button>

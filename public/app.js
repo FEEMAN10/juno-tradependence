@@ -44,8 +44,9 @@ var I18N={
   prohThanks:'Thank you for your cooperation.',
   closeH:'Join us for an evening where every move has a reason. See you on board.', shareBtn:'↗ Share this invitation',
   shareKicker:'You’re on the list', shareLede:'Save your card and share it to your story.',
-  shareImg:'↗ Share my card', shareDl:'⤓ Save image',
-  shareCardKicker:'Will be aboard', shareCardDate:'Jakarta Phinisi · 18 August 2026',
+  shareImg:'↗ Share my card', shareDl:'⤓ Save image', shareFmt:'Size', shareStyle:'Style',
+  shareLede2:'Pick a size and style, then share it to your story.',
+  shareCardKicker:'See you on board', shareCardDate:'Jakarta Phinisi · 18 August 2026',
   /* dynamic */
   stAcc:'✓ You’re on the list — we can’t wait', stDec:'You’ve declined — we’ll miss you. Tap to change ↺',
   toAcc:'Wonderful — now choose your menu below ↓', toDec:'RSVP saved. You can change it any time.',
@@ -96,8 +97,9 @@ var I18N={
   prohThanks:'Terima kasih atas kerja samanya.',
   closeH:'Bergabunglah di malam di mana setiap langkah punya alasan. Sampai jumpa di kapal.', shareBtn:'↗ Bagikan undangan ini',
   shareKicker:'Kamu terdaftar', shareLede:'Simpan kartu ini dan bagikan ke story kamu.',
-  shareImg:'↗ Bagikan kartu', shareDl:'⤓ Simpan gambar',
-  shareCardKicker:'Akan hadir', shareCardDate:'Jakarta Phinisi · 18 Agustus 2026',
+  shareImg:'↗ Bagikan kartu', shareDl:'⤓ Simpan gambar', shareFmt:'Ukuran', shareStyle:'Gaya',
+  shareLede2:'Pilih ukuran dan gaya, lalu bagikan ke story kamu.',
+  shareCardKicker:'Sampai jumpa di kapal', shareCardDate:'Jakarta Phinisi · 18 Agustus 2026',
   stAcc:'✓ Anda terdaftar — sampai jumpa di kapal', stDec:'Anda berhalangan — kami akan merindukan Anda. Ketuk untuk ubah ↺',
   toAcc:'Luar biasa — silakan pilih menu Anda di bawah ↓', toDec:'RSVP tersimpan. Dapat diubah kapan saja.',
   toNeedRsvp:'Silakan konfirmasi kehadiran terlebih dahulu', toNeedFields:'Pilih hidangan utama, penutup & minuman', toSent:'Terkirim ke katering ✓',
@@ -145,7 +147,7 @@ function reflectRsvp(v){                     // show a saved RSVP without re-wri
 }
 
 /* ============ language ============ */
-var STATE={lang:'en',rsvp:null,main:null,dessert:null,bev:null,diet:null,dietText:''};
+var STATE={lang:'en',rsvp:null,main:null,dessert:null,bev:null,diet:null,dietText:'',shareRatio:'4:5',shareVariant:'signature'};
 function setLang(l){
   STATE.lang=l; document.documentElement.lang=l;
   var d=I18N[l];
@@ -312,8 +314,12 @@ function _fitText(ctx,text,max,base,weight){
   do{ctx.font=weight+' '+size+'px "Source Sans 3",system-ui,sans-serif';if(ctx.measureText(text).width<=max)break;size-=3;}while(size>28);
   return size;
 }
+var SHARE_DIMS={'4:5':[1080,1350],'1:1':[1080,1080],'9:16':[1080,1920]};
 function buildShareCard(){
   var c=document.getElementById('shareCanvas'); if(!c) return Promise.resolve();
+  var dim=SHARE_DIMS[STATE.shareRatio]||SHARE_DIMS['4:5'];
+  if(c.width!==dim[0]||c.height!==dim[1]){ c.width=dim[0]; c.height=dim[1]; }
+  var variant=STATE.shareVariant||'signature';
   var name=(document.getElementById('dearGuest').textContent||'').trim();
   var d=I18N[STATE.lang];
   var fontReady = (document.fonts&&document.fonts.load)
@@ -321,39 +327,90 @@ function buildShareCard(){
     : Promise.resolve();
   return Promise.all([_loadShareAssets(),fontReady]).then(function(r){
     var A=r[0], ctx=c.getContext('2d'), W=c.width, H=c.height;
-    // background
+    var ink='#F4F4F1', sub='#c9ccd1', kickCol='#F08A2E';
+
+    // ---------- background per style ----------
     ctx.fillStyle='#0B0C0E'; ctx.fillRect(0,0,W,H);
-    if(A.bg){ _drawCover(ctx,A.bg,0,0,W,H); ctx.fillStyle='rgba(9,10,12,.74)'; ctx.fillRect(0,0,W,H); }
-    // orange glow at top
-    var g=ctx.createRadialGradient(W/2,H*0.30,60,W/2,H*0.30,W*0.72);
-    g.addColorStop(0,'rgba(232,105,10,.22)'); g.addColorStop(1,'rgba(232,105,10,0)');
-    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
-    // border frame
-    ctx.strokeStyle='rgba(237,237,234,.16)'; ctx.lineWidth=3; ctx.strokeRect(34,34,W-68,H-68);
-    // badge hero
-    if(A.badge){ var bw=W*0.80, bh=A.badge.height*(bw/A.badge.width); ctx.drawImage(A.badge,(W-bw)/2,H*0.085,bw,bh); }
-    ctx.textAlign='center';
-    // kicker + date (orange)
-    ctx.fillStyle='#F08A2E'; ctx.font='600 27px "Source Sans 3",system-ui,sans-serif';
-    ctx.fillText((d.shareCardKicker||'Will be aboard').toUpperCase(), W/2, H*0.615);
-    // guest name (big, auto-fit)
-    var ns=_fitText(ctx,name,W*0.84,72,'700');
-    ctx.fillStyle='#F4F4F1'; ctx.font='700 '+ns+'px "Source Sans 3",system-ui,sans-serif';
-    ctx.fillText(name, W/2, H*0.615+ns+18);
-    // date line
-    ctx.fillStyle='#c9ccd1'; ctx.font='400 30px "Source Sans 3",system-ui,sans-serif';
-    ctx.fillText(d.shareCardDate||'Jakarta Phinisi · 18 August 2026', W/2, H*0.615+ns+66);
-    // tagline image
-    if(A.tag){ var tw=W*0.48, th=A.tag.height*(tw/A.tag.width); ctx.globalAlpha=.92; ctx.drawImage(A.tag,(W-tw)/2,H*0.80,tw,th); ctx.globalAlpha=1; }
-    // wordmark
-    if(A.mark){ var mw=W*0.20, mh=A.mark.height*(mw/A.mark.width); ctx.globalAlpha=.8; ctx.drawImage(A.mark,(W-mw)/2,H*0.905,mw,mh); ctx.globalAlpha=1; }
+    if(variant==='signature'){
+      if(A.bg){ _drawCover(ctx,A.bg,0,0,W,H); ctx.fillStyle='rgba(9,10,12,.76)'; ctx.fillRect(0,0,W,H); }
+      var gs=ctx.createRadialGradient(W/2,H*0.32,60,W/2,H*0.32,W*0.75);
+      gs.addColorStop(0,'rgba(232,105,10,.20)'); gs.addColorStop(1,'rgba(232,105,10,0)');
+      ctx.fillStyle=gs; ctx.fillRect(0,0,W,H);
+    } else if(variant==='ember'){
+      var ge=ctx.createLinearGradient(0,0,W*0.4,H);
+      ge.addColorStop(0,'#3A1B06'); ge.addColorStop(0.42,'#1a1108'); ge.addColorStop(1,'#08090B');
+      ctx.fillStyle=ge; ctx.fillRect(0,0,W,H);
+      var gr=ctx.createRadialGradient(W*0.30,H*0.24,40,W*0.30,H*0.24,W*0.9);
+      gr.addColorStop(0,'rgba(232,105,10,.30)'); gr.addColorStop(1,'rgba(232,105,10,0)');
+      ctx.fillStyle=gr; ctx.fillRect(0,0,W,H);
+    } else { // noir — pure, minimal
+      ctx.fillStyle='#0A0B0D'; ctx.fillRect(0,0,W,H);
+      var gn=ctx.createRadialGradient(W/2,H*0.5,60,W/2,H*0.5,W*0.85);
+      gn.addColorStop(0,'rgba(232,105,10,.10)'); gn.addColorStop(1,'rgba(232,105,10,0)');
+      ctx.fillStyle=gn; ctx.fillRect(0,0,W,H);
+    }
+
+    // ---------- frame (skip on noir for a cleaner look) ----------
+    if(variant!=='noir'){
+      var m=Math.round(W*0.033);
+      ctx.strokeStyle='rgba(237,237,234,.15)'; ctx.lineWidth=Math.max(2,W*0.0028);
+      ctx.strokeRect(m,m,W-2*m,H-2*m);
+    }
+
+    // ---------- measured, vertically-centered stack ----------
+    ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+    var square=(STATE.shareRatio==='1:1');
+    var badgeW=W*(square?0.66:0.78), badgeH=A.badge?A.badge.height*(badgeW/A.badge.width):0;
+    var kick=(d.shareCardKicker||'See you on board').toUpperCase();
+    var kickSize=Math.round(W*(square?0.028:0.030));
+    ctx.font='600 '+kickSize+'px "Source Sans 3",system-ui,sans-serif'; // for consistent metrics
+    var nameSize=_fitText(ctx,name,W*0.82,Math.round(W*0.072),'700');
+    var dateSize=Math.round(W*0.028);
+    var tagW=W*0.46, tagH=A.tag?A.tag.height*(tagW/A.tag.width):0;
+    var markW=W*0.19, markH=A.mark?A.mark.height*(markW/A.mark.width):0;
+    var g1=Math.round(H*0.030), gName=Math.round(H*0.012), gDate=Math.round(H*0.012);
+    var hasRule=(variant==='noir');
+    var ruleH=hasRule?Math.round(H*0.030):0;
+    var stackH=badgeH+g1+kickSize+ruleH+gName+nameSize+gDate+dateSize+Math.round(H*0.045)+tagH+Math.round(H*0.028)+markH;
+    var y=Math.max(Math.round(H*0.06),(H-stackH)/2);
+
+    if(A.badge){ ctx.drawImage(A.badge,(W-badgeW)/2,y,badgeW,badgeH); }
+    y+=badgeH+g1;
+
+    ctx.fillStyle=kickCol; ctx.font='600 '+kickSize+'px "Source Sans 3",system-ui,sans-serif';
+    try{ctx.letterSpacing=Math.round(kickSize*0.12)+'px';}catch(e){}
+    ctx.fillText(kick,W/2,y+kickSize); y+=kickSize;
+    try{ctx.letterSpacing='0px';}catch(e){}
+
+    if(hasRule){ y+=Math.round(ruleH*0.55); ctx.strokeStyle='rgba(232,105,10,.6)'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(W/2-W*0.09,y); ctx.lineTo(W/2+W*0.09,y); ctx.stroke(); y+=Math.round(ruleH*0.45); }
+
+    y+=gName;
+    ctx.fillStyle=ink; ctx.font='700 '+nameSize+'px "Source Sans 3",system-ui,sans-serif';
+    ctx.fillText(name,W/2,y+nameSize); y+=nameSize+gDate;
+
+    ctx.fillStyle=sub; ctx.font='400 '+dateSize+'px "Source Sans 3",system-ui,sans-serif';
+    ctx.fillText(d.shareCardDate||'',W/2,y+dateSize); y+=dateSize+Math.round(H*0.045);
+
+    if(A.tag){ ctx.globalAlpha=.92; ctx.drawImage(A.tag,(W-tagW)/2,y,tagW,tagH); ctx.globalAlpha=1; }
+    y+=tagH+Math.round(H*0.028);
+    if(A.mark){ ctx.globalAlpha=.8; ctx.drawImage(A.mark,(W-markW)/2,y,markW,markH); ctx.globalAlpha=1; }
   });
 }
+// size / style pickers
+function _initShareOpts(){
+  var rr=document.getElementById('ratioRow'), sr=document.getElementById('styleRow');
+  if(rr&&!rr._wired){ rr._wired=1; rr.addEventListener('click',function(e){var b=e.target.closest('[data-ratio]');if(!b)return;
+    STATE.shareRatio=b.dataset.ratio; rr.querySelectorAll('.schip').forEach(function(x){x.classList.toggle('on',x===b);}); buildShareCard(); }); }
+  if(sr&&!sr._wired){ sr._wired=1; sr.addEventListener('click',function(e){var b=e.target.closest('[data-style]');if(!b)return;
+    STATE.shareVariant=b.dataset.style; sr.querySelectorAll('.schip').forEach(function(x){x.classList.toggle('on',x===b);}); buildShareCard(); }); }
+}
 function _cardBlob(){ return new Promise(function(res){ var c=document.getElementById('shareCanvas'); if(!c||!c.toBlob){res(null);return;} c.toBlob(function(b){res(b);},'image/png',0.95); }); }
+function _cardName(){ return 'juno-tradependence-'+(STATE.shareRatio||'4-5').replace(':','x')+'-'+(STATE.shareVariant||'signature')+'.png'; }
 function shareCard(){
   buildShareCard().then(_cardBlob).then(function(blob){
     if(!blob){ toast('Could not build image'); return; }
-    var file=new File([blob],'juno-tradependence-2026.png',{type:'image/png'});
+    var file=new File([blob],_cardName(),{type:'image/png'});
     var data={files:[file],title:EV.title,text:I18N[STATE.lang].shareText};
     if(navigator.canShare&&navigator.canShare({files:[file]})&&navigator.share){
       navigator.share(data).catch(function(){});
@@ -362,10 +419,10 @@ function shareCard(){
 }
 function downloadCard(){ buildShareCard().then(_cardBlob).then(function(b){ if(b) _saveBlob(b); }); }
 function _saveBlob(blob){
-  var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='juno-tradependence-2026.png';
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=_cardName();
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){URL.revokeObjectURL(a.href);},1500);
 }
-function showShare(){ var w=document.getElementById('shareWrap'); if(!w)return; w.style.display='block'; buildShareCard(); }
+function showShare(){ var w=document.getElementById('shareWrap'); if(!w)return; w.style.display='block'; _initShareOpts(); buildShareCard(); }
 function hideShare(){ var w=document.getElementById('shareWrap'); if(w) w.style.display='none'; }
 
 /* ============ utils ============ */
