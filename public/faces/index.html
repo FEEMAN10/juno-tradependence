@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Face grouping spike — Tradependence</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--orange:#E8690A;--paper:#EDEDEA;--muted:#9a9ea6;--ink:#0B0C0E;--surface:#15171A;--line:rgba(237,237,234,.12);--sans:'Source Sans 3',system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:#050506;color:var(--paper);font-family:var(--sans);padding:24px;line-height:1.5}
+.wrap{max-width:1000px;margin:0 auto}
+h1{font-size:22px;font-weight:800;margin:0}
+.kick{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--orange)}
+.sub{color:var(--muted);font-size:13.5px;margin:6px 0 18px;max-width:680px}
+.status{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:18px;font-size:14px}
+.pbar{height:6px;background:rgba(237,237,234,.14);border-radius:999px;margin-top:10px;overflow:hidden}
+.pbar>div{height:100%;width:0;background:var(--orange);border-radius:999px;transition:width .2s}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.stat b{font-size:22px;font-weight:800}.stat span{display:block;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.cluster{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+.cluster h3{margin:0 0 10px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
+.cluster h3 .c{color:var(--muted);font-weight:400;font-size:12.5px}
+.faces{display:flex;gap:8px;flex-wrap:wrap}
+.faces canvas{width:74px;height:74px;border-radius:10px;border:1px solid var(--line);object-fit:cover;background:#000}
+.note{color:var(--muted);font-size:12.5px;margin-top:8px}
+.err{color:#e8908a}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kick">Diagnostic · runs entirely in your browser</div>
+  <h1>Face grouping spike</h1>
+  <p class="sub">Detects faces in your 17 event photos and groups similar ones into "people" — the exact step that would later power per-guest "Photos of You". Your images never leave this page. This proves whether browser-side grouping is good enough before we build the real tagging system.</p>
+
+  <div class="status" id="status">Loading face model…<div class="pbar"><div id="pbar"></div></div></div>
+  <div class="stats" id="stats" style="display:none"></div>
+  <div id="clusters"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+<script src="../memories/photos.js"></script>
+<script>
+(function(){
+  var MODELS='https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
+  var PHOTOS=(window.MEMORY_PHOTOS||[]).map(function(p){return '../memories/'+p.src;});
+  var statusEl=document.getElementById('status'), pbar=document.getElementById('pbar'),
+      clustersEl=document.getElementById('clusters'), statsEl=document.getElementById('stats');
+  var THRESH=0.52;  // euclidean distance below which two faces are "the same person"
+
+  function setStatus(html){ statusEl.innerHTML=html+'<div class="pbar"><div id="pbar" style="width:'+pbar.style.width+'"></div></div>'; pbar=document.getElementById('pbar'); }
+  function prog(f){ pbar.style.width=(f*100)+'%'; }
+  function loadImg(src){return new Promise(function(res,rej){var i=new Image();i.crossOrigin='anonymous';i.onload=function(){res(i);};i.onerror=function(){res(null);};i.src=src;});}
+  function cropFace(img,box){var s=74,c=document.createElement('canvas');c.width=s;c.height=s;var x=c.getContext('2d');
+    var m=box.width*0.25; var sx=Math.max(0,box.x-m),sy=Math.max(0,box.y-m),sw=box.width+m*2,sh=box.height+m*2;
+    x.drawImage(img,sx,sy,sw,sh,0,0,s,s);return c;}
+
+  async function run(){
+    try{
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODELS),
+        faceapi.nets.faceLandmark68Net.loadFromUri(MODELS),
+        faceapi.nets.faceRecognitionNet.loadFromUri(MODELS)
+      ]);
+    }catch(e){ setStatus('<span class="err">Could not load the face model from CDN: '+e.message+'</span>'); return; }
+
+    var faces=[];  // {desc, crop, photoIdx}
+    var noFace=0;
+    for(var i=0;i<PHOTOS.length;i++){
+      setStatus('Analyzing photo '+(i+1)+' of '+PHOTOS.length+'…'); prog(i/PHOTOS.length);
+      var img=await loadImg(PHOTOS[i]); if(!img){continue;}
+      var dets;
+      try{
+        dets=await faceapi.detectAllFaces(img,new faceapi.TinyFaceDetectorOptions({inputSize:512,scoreThreshold:0.4}))
+          .withFaceLandmarks().withFaceDescriptors();
+      }catch(e){ dets=[]; }
+      if(!dets.length) noFace++;
+      dets.forEach(function(d){ faces.push({desc:d.descriptor, crop:cropFace(img,d.detection.box), photoIdx:i}); });
+    }
+    prog(1);
+
+    // greedy clustering
+    var clusters=[]; // {desc(centroid), members:[face], photos:Set}
+    faces.forEach(function(f){
+      var best=-1,bestDist=THRESH;
+      for(var c=0;c<clusters.length;c++){ var dist=faceapi.euclideanDistance(f.desc,clusters[c].desc);
+        if(dist<bestDist){bestDist=dist;best=c;} }
+      if(best>=0){ var cl=clusters[best]; cl.members.push(f); cl.photos.add(f.photoIdx);
+        // update centroid (running mean)
+        var n=cl.members.length, nd=new Float32Array(f.desc.length);
+        for(var k=0;k<nd.length;k++) nd[k]=(cl.desc[k]*(n-1)+f.desc[k])/n; cl.desc=nd;
+      } else { clusters.push({desc:f.desc.slice(),members:[f],photos:new Set([f.photoIdx])}); }
+    });
+    clusters.sort(function(a,b){return b.members.length-a.members.length;});
+
+    statusEl.style.display='none'; statsEl.style.display='flex';
+    statsEl.innerHTML =
+      '<div class="stat"><b>'+PHOTOS.length+'</b><span>Photos</span></div>'+
+      '<div class="stat"><b>'+faces.length+'</b><span>Faces found</span></div>'+
+      '<div class="stat"><b>'+clusters.length+'</b><span>People (groups)</span></div>'+
+      '<div class="stat"><b>'+noFace+'</b><span>Photos w/o faces</span></div>';
+
+    clustersEl.innerHTML='';
+    clusters.forEach(function(cl,i){
+      var div=document.createElement('div'); div.className='cluster';
+      var h=document.createElement('h3'); h.innerHTML='Person '+String.fromCharCode(65+(i%26))+(i>=26?('+'+i):'')+' <span class="c">· '+cl.members.length+' face'+(cl.members.length>1?'s':'')+' across '+cl.photos.size+' photo'+(cl.photos.size>1?'s':'')+'</span>';
+      div.appendChild(h);
+      var fw=document.createElement('div'); fw.className='faces';
+      cl.members.slice(0,24).forEach(function(m){ fw.appendChild(m.crop); });
+      div.appendChild(fw); clustersEl.appendChild(div);
+    });
+    var singles=clusters.filter(function(c){return c.members.length===1;}).length;
+    var noteEl=document.createElement('p'); noteEl.className='note';
+    noteEl.textContent='Threshold '+THRESH+' · '+singles+' singleton group(s). In the real app you would confirm/merge/split these and name each with a guest.';
+    clustersEl.appendChild(noteEl);
+  }
+  if(window.faceapi) run(); else setStatus('<span class="err">face-api library failed to load (CDN blocked?).</span>');
+})();
+</script>
+</body>
+</html>
