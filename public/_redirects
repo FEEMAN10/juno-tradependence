@@ -2,4 +2,4 @@
 # memories. 200 = rewrite (serve the memories app at the root), so the address bar
 # stays exactly /?g=token. Query string is forwarded automatically.
 # Only the exact root path is affected; /admin, /faces, /assets, /memories keep working.
-/    /memories/index.html    200
+/    /memories/index.html    200!
