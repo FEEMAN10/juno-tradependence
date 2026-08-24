@@ -48,7 +48,7 @@ var I18N={
   remindT:'Your meal isn’t chosen yet', remindS:'Tap to pick your dishes so catering has your order →',
   shareImg:'↗ Share my card', shareDl:'⤓ Save image', shareFmt:'Size', shareStyle:'Style',
   shareLede2:'Pick a size and style, then share it to your story.',
-  shareCardKicker:'See you on board', shareCardDate:'Jakarta Phinisi · 18 August 2026',
+  shareCardKicker:'Thanks for boarding with us', shareCardDate:'Jakarta Phinisi · 18 August 2026',
   /* dynamic */
   stAcc:'✓ You’re on the list — we can’t wait', stDec:'You’ve declined — we’ll miss you. Tap to change ↺',
   toAcc:'Wonderful — now choose your menu below ↓', toDec:'RSVP saved. You can change it any time.',
@@ -103,7 +103,7 @@ var I18N={
   remindT:'Menu kamu belum dipilih', remindS:'Ketuk untuk memilih hidangan agar katering menerima pesananmu →',
   shareImg:'↗ Bagikan kartu', shareDl:'⤓ Simpan gambar', shareFmt:'Ukuran', shareStyle:'Gaya',
   shareLede2:'Pilih ukuran dan gaya, lalu bagikan ke story kamu.',
-  shareCardKicker:'Sampai jumpa di kapal', shareCardDate:'Jakarta Phinisi · 18 Agustus 2026',
+  shareCardKicker:'Terima kasih telah bergabung', shareCardDate:'Jakarta Phinisi · 18 Agustus 2026',
   stAcc:'✓ Anda terdaftar — sampai jumpa di kapal', stDec:'Anda berhalangan — kami akan merindukan Anda. Ketuk untuk ubah ↺',
   toAcc:'Luar biasa — silakan pilih menu Anda di bawah ↓', toDec:'RSVP tersimpan. Dapat diubah kapan saja.',
   toNeedRsvp:'Silakan konfirmasi kehadiran terlebih dahulu', toNeedFields:'Pilih hidangan utama, penutup & minuman', toSent:'Terkirim ke katering ✓',

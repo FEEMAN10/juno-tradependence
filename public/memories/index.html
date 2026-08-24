@@ -41,6 +41,8 @@ canvas{display:block;width:100%;height:100%;background:#000}
 .time{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;flex:0 0 auto;min-width:66px;text-align:right}
 .cap{font-size:12px;color:var(--muted);max-width:460px;text-align:center;line-height:1.5}
 .cap b{color:#c9ccd1;font-weight:600}
+.revealbtn{margin-top:18px;background:var(--orange);color:#140b04;border:none;border-radius:999px;font-family:var(--sans);font-weight:700;font-size:14px;padding:13px 26px;cursor:pointer;box-shadow:0 10px 30px rgba(232,105,10,.35)}
+.revealbtn:active{transform:translateY(1px)}
 .gallery{width:min(94vw,520px);margin-top:6px}
 .gallery h2{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--orange);margin:22px 0 10px;text-align:center}
 .gallery h2 span{color:var(--muted)}
@@ -108,7 +110,8 @@ body.theater-on{overflow:hidden}
 
 <div class="cap">Real event photos, <b>ordered by capture time</b> and bucketed into the night’s phases — cut to the <b>“No Random Move”</b> theme (~136 BPM). Every transition and pulse lands on the beat.</div>
 
-<div class="gallery" id="gallery"></div>
+<button class="revealbtn" id="revealBtn" style="display:none">See your full memories ▾</button>
+<div class="gallery" id="gallery" style="display:none"></div>
 
 <div class="lb" id="lb" style="display:none">
   <button class="lb-close" id="lbClose" aria-label="Close">✕</button>
@@ -153,7 +156,7 @@ body.theater-on{overflow:hidden}
       GUEST_PHOTOS = (!ph.error && ph.data) ? ph.data.map(function(x){ return {src:x.path, phase:x.phase, time:PHASE_TIME[x.phase]||'', at:x.taken_at}; }) : [];
       if(GUEST_PHOTOS.length) PHOTOS=GUEST_PHOTOS;   // else keep the sample reel so there's always a movie
       if(!inv.error && inv.data && inv.data[0] && inv.data[0].guest_name){ setName(inv.data[0].guest_name); }
-      if(!hl.error && hl.data){ HIGHLIGHTS=hl.data.map(function(x){return x.path;}); }
+      if(!hl.error && hl.data){ HIGHLIGHTS=hl.data.map(function(x){return {src:x.path, phase:x.phase, time:PHASE_TIME[x.phase]||''};}); }
     }).catch(function(){});
   }
   function renderGallery(){
@@ -167,10 +170,14 @@ body.theater-on{overflow:hidden}
       h+='<h2>Photos of '+esc(NAME)+'</h2><p style="text-align:center;color:var(--muted);font-size:13px;margin:0 0 4px">We’re still tagging photos of you — check back soon. Enjoy the highlights below.</p>';
     }
     if(HIGHLIGHTS.length){ h+='<h2>Event highlights <span>· '+HIGHLIGHTS.length+'</span></h2><div class="grid">'+
-      HIGHLIGHTS.map(function(s,i){return '<img loading="lazy" data-set="hl" data-i="'+i+'" src="'+esc(s)+'">';}).join('')+'</div>'; }
+      HIGHLIGHTS.map(function(p,i){return '<img loading="lazy" data-set="hl" data-i="'+i+'" src="'+esc(p.src)+'">';}).join('')+'</div>'; }
     g.innerHTML=h;
     g.onclick=function(e){ var im=e.target.closest('img'); if(!im)return; var i=+im.dataset.i;
-      openLB(im.dataset.set==='you' ? GUEST_PHOTOS.map(function(p){return p.src;}) : HIGHLIGHTS.slice(), i); };
+      openLB(im.dataset.set==='you' ? GUEST_PHOTOS.map(function(p){return p.src;}) : HIGHLIGHTS.map(function(p){return p.src;}), i); };
+    // reveal-gallery flow: keep it hidden until the guest asks for it (splash-first)
+    var rb=document.getElementById('revealBtn');
+    if(TOKEN && h){ g.style.display='none'; if(rb) rb.style.display='inline-flex'; }
+    else { g.style.display='block'; if(rb) rb.style.display='none'; }
   }
 
   // ---- lightbox (enlarge + download) ----
@@ -196,7 +203,7 @@ body.theater-on{overflow:hidden}
   function loadImg(src){return new Promise(function(res){var i=new Image();i.onload=function(){res(i);};i.onerror=function(){res(null);};i.src=src;});}
   function loadAll(){
     var jobs=Object.keys(SRC).map(function(k){return loadImg(A+SRC[k]).then(function(im){IMG[k]=im;});});
-    PHOTOS.forEach(function(p){ jobs.push(loadImg(p.src).then(function(im){p.im=im;})); });
+    PHOTOS.concat(HIGHLIGHTS).forEach(function(p){ if(p&&!p.im) jobs.push(loadImg(p.src).then(function(im){p.im=im;})); });
     return Promise.all(jobs);
   }
   function audioReady(){return new Promise(function(res){
@@ -218,15 +225,26 @@ body.theater-on{overflow:hidden}
   function buildTimeline(){
     var cine=(MODE==='cine');
     FADE=cine?0.5:0.22;
-    var list=cine?PHOTOS.filter(function(_,i){return i%2===0;}):PHOTOS;  // cinematic = fewer heroes, longer holds
     var pbeats=cine?4:2;
+    var list=cine?PHOTOS.filter(function(_,i){return i%2===0;}):PHOTOS.slice();
+
+    // Fill the whole song: if there aren't enough photos to span the music,
+    // pad with more pictures (highlights first for variety, then cycle) so the
+    // reel never ends on a long static card.
+    var trackDur=(AUD.duration&&isFinite(AUD.duration))?AUD.duration:20;
+    var TITLE=4, ENDMIN=4;
+    var needPhotos=Math.max(list.length, Math.ceil((Math.round(trackDur/BEAT)-TITLE-ENDMIN)/pbeats));
+    var pool=HIGHLIGHTS.concat(PHOTOS);
+    var j=0;
+    while(list.length<needPhotos && pool.length){ list.push(pool[j%pool.length]); j++; }
+
     SB=[{kind:'title', beats:4}];
     var prevPhase=null;
     list.forEach(function(p){
       SB.push({kind:'photo', im:p.im, phase:p.phase, time:p.time, first:(p.phase!==prevPhase), beats:pbeats});
       prevPhase=p.phase;
     });
-    SB.push({kind:'end', beats:4});
+    SB.push({kind:'end', beats:ENDMIN});
     var cum=0;
     SB.forEach(function(c,i){ c.i=i; c.kbp=kb(i*7+3,cine); c.start=OFFSET+cum*BEAT; c.dur=c.beats*BEAT; cum+=c.beats; });
     var last=SB[SB.length-1];
@@ -263,8 +281,8 @@ body.theater-on{overflow:hidden}
     X.fillStyle='#c9ccd1';X.font='400 34px "Source Sans 3",sans-serif';X.fillText('Jakarta Phinisi · 18 August 2026',W/2,H*0.80);X.globalAlpha=1;});}
   function drawEnd(c,localT,alpha){card(alpha,function(a){X.globalAlpha=a;X.textAlign='center';
     if(IMG.coin){var cw=W*0.30,ch=IMG.coin.height*(cw/IMG.coin.width);X.drawImage(IMG.coin,(W-cw)/2,H*0.24,cw,ch);}
-    X.fillStyle='#F08A2E';X.font='600 30px "Source Sans 3",sans-serif';try{X.letterSpacing='5px';}catch(e){}
-    X.fillText('SEE YOU ON BOARD',W/2,H*0.50);try{X.letterSpacing='0px';}catch(e){}
+    X.fillStyle='#F08A2E';X.font='600 30px "Source Sans 3",sans-serif';try{X.letterSpacing='4px';}catch(e){}
+    X.fillText('THANKS FOR BOARDING WITH US',W/2,H*0.50);try{X.letterSpacing='0px';}catch(e){}
     X.fillStyle='#F4F4F1';X.font='700 60px "Source Sans 3",sans-serif';X.fillText(NAME,W/2,H*0.565);
     if(IMG.tagline){var tw=W*0.5,th=IMG.tagline.height*(tw/IMG.tagline.width);X.globalAlpha=a*0.95;X.drawImage(IMG.tagline,(W-tw)/2,H*0.63,tw,th);}
     if(IMG.wordmark){var mw=W*0.2,mh=IMG.wordmark.height*(mw/IMG.wordmark.width);X.globalAlpha=a*0.8;X.drawImage(IMG.wordmark,(W-mw)/2,H*0.74,mw,mh);}X.globalAlpha=1;});}
@@ -375,6 +393,11 @@ body.theater-on{overflow:hidden}
   };
 
   var fr=(document.fonts&&document.fonts.ready)?document.fonts.ready:Promise.resolve();
+  document.getElementById('revealBtn').onclick=function(){
+    var g=document.getElementById('gallery'); g.style.display='block'; this.style.display='none';
+    g.scrollIntoView({behavior:'smooth',block:'start'});
+  };
+
   resolveGuest().then(function(){ return Promise.all([loadAll(),audioReady(),fr]); })
     .then(function(){ buildTimeline(); render(0); renderGallery(); requestAnimationFrame(frame); });
 })();
