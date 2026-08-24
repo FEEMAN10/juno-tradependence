@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
+<!-- Resolve all relative assets against /memories/ even when this page is served at the site root -->
+<base href="/memories/">
 <title>Your Night — Tradependence Day</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -104,7 +106,8 @@ canvas{display:block;width:100%;height:100%;background:#000}
 
   var BPM=136.36, BEAT=60/BPM, OFFSET=0.06, FADE=0.22, MODE='hype';
   var PHASE_TIME={ARRIVE:'14:00',CONNECT:'16:00',DINE:'19:00',CELEBRATE:'20:35',FAREWELL:'22:20'};
-  var PHOTOS=window.MEMORY_PHOTOS||[];   // default = sample reel
+  var PHOTOS=window.MEMORY_PHOTOS||[];   // reel source (guest's photos, or sample fallback)
+  var GUEST_PHOTOS=null;                  // the guest's OWN photos (null until resolved)
   var HIGHLIGHTS=[];
   function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 
@@ -119,9 +122,8 @@ canvas{display:block;width:100%;height:100%;background:#000}
       sb.rpc('get_highlight_photos',{p_token:TOKEN})
     ]).then(function(res){
       var ph=res[0], inv=res[1], hl=res[2];
-      if(!ph.error && ph.data && ph.data.length){
-        PHOTOS=ph.data.map(function(x){ return {src:x.path, phase:x.phase, time:PHASE_TIME[x.phase]||'', at:x.taken_at}; });
-      }
+      GUEST_PHOTOS = (!ph.error && ph.data) ? ph.data.map(function(x){ return {src:x.path, phase:x.phase, time:PHASE_TIME[x.phase]||'', at:x.taken_at}; }) : [];
+      if(GUEST_PHOTOS.length) PHOTOS=GUEST_PHOTOS;   // else keep the sample reel so there's always a movie
       if(!inv.error && inv.data && inv.data[0] && inv.data[0].guest_name){ setName(inv.data[0].guest_name); }
       if(!hl.error && hl.data){ HIGHLIGHTS=hl.data.map(function(x){return x.path;}); }
     }).catch(function(){});
@@ -130,8 +132,12 @@ canvas{display:block;width:100%;height:100%;background:#000}
     var g=document.getElementById('gallery'); if(!g) return;
     if(!TOKEN){ g.innerHTML=''; return; }   // gallery only in per-guest mode
     var h='';
-    if(PHOTOS.length){ h+='<h2>Photos of '+esc(NAME)+' <span>· '+PHOTOS.length+'</span></h2><div class="grid">'+
-      PHOTOS.map(function(p){return '<img loading="lazy" src="'+esc(p.src)+'">';}).join('')+'</div>'; }
+    if(GUEST_PHOTOS && GUEST_PHOTOS.length){
+      h+='<h2>Photos of '+esc(NAME)+' <span>· '+GUEST_PHOTOS.length+'</span></h2><div class="grid">'+
+        GUEST_PHOTOS.map(function(p){return '<img loading="lazy" src="'+esc(p.src)+'">';}).join('')+'</div>';
+    } else if(GUEST_PHOTOS){   // resolved, but none tagged yet
+      h+='<h2>Photos of '+esc(NAME)+'</h2><p style="text-align:center;color:var(--muted);font-size:13px;margin:0 0 4px">We’re still tagging photos of you — check back soon. Enjoy the highlights below.</p>';
+    }
     if(HIGHLIGHTS.length){ h+='<h2>Event highlights <span>· '+HIGHLIGHTS.length+'</span></h2><div class="grid">'+
       HIGHLIGHTS.map(function(s){return '<img loading="lazy" src="'+esc(s)+'">';}).join('')+'</div>'; }
     g.innerHTML=h;
