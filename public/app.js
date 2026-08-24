@@ -42,7 +42,7 @@ var I18N={
   prohKicker:'On Board Safety', prohTitle:'Please leave behind', prohLede:'For everyone’s safety and comfort, please do not bring the following on board:',
   proh1:'Weapons or sharp objects', proh2:'Explosives, fireworks or flammable materials', proh3:'Illegal drugs or controlled substances', proh4:'Outside alcohol <small>(fully hosted on board)</small>', proh5:'Drones <small>without prior approval</small>',
   prohThanks:'Thank you for your cooperation.',
-  closeH:'Join us for an evening where every move has a reason. See you on board.', shareBtn:'↗ Share this invitation',
+  closeH:'Join us for an evening where every move has a reason. See you on board.', shareBtn:'↗ Share this invitation', memoriesBtn:'🎬 Watch your memories',
   shareKicker:'You’re on the list', shareLede:'Save your card and share it to your story.',
   navAttend:'Attend', navRundown:'Rundown', navMap:'Map', navFood:'Food', navDress:'Dress', navSafety:'Safety',
   remindT:'Your meal isn’t chosen yet', remindS:'Tap to pick your dishes so catering has your order →',
@@ -97,7 +97,7 @@ var I18N={
   prohKicker:'Keamanan di Kapal', prohTitle:'Mohon tidak membawa', prohLede:'Demi keamanan dan kenyamanan bersama, mohon tidak membawa hal berikut ke atas kapal:',
   proh1:'Senjata atau benda tajam', proh2:'Bahan peledak, kembang api, atau mudah terbakar', proh3:'Narkoba atau zat terlarang', proh4:'Minuman beralkohol dari luar <small>(tersedia lengkap di kapal)</small>', proh5:'Drone <small>tanpa izin sebelumnya</small>',
   prohThanks:'Terima kasih atas kerja samanya.',
-  closeH:'Bergabunglah di malam di mana setiap langkah punya alasan. Sampai jumpa di kapal.', shareBtn:'↗ Bagikan undangan ini',
+  closeH:'Bergabunglah di malam di mana setiap langkah punya alasan. Sampai jumpa di kapal.', shareBtn:'↗ Bagikan undangan ini', memoriesBtn:'🎬 Tonton memori kamu',
   shareKicker:'Kamu terdaftar', shareLede:'Simpan kartu ini dan bagikan ke story kamu.',
   navAttend:'Hadir', navRundown:'Acara', navMap:'Peta', navFood:'Menu', navDress:'Busana', navSafety:'Aman',
   remindT:'Menu kamu belum dipilih', remindS:'Ketuk untuk memilih hidangan agar katering menerima pesananmu →',
@@ -305,6 +305,7 @@ function buildDevJson(){
   el.textContent=JSON.stringify(rec,null,2);
 }
 function currentToken(){return new URLSearchParams(location.search).get('g')||'demo';}
+function openMemories(){ location.href='memories/?g='+encodeURIComponent(currentToken()); }
 
 /* ============ calendar ============ */
 var EV={title:'Juno · Tradependence Day 2026',start:'20260818T070000Z',end:'20260818T163000Z',
