@@ -82,17 +82,37 @@ canvas{display:block;width:100%;height:100%;background:#000}
 <div class="cap">Real event photos, <b>ordered by capture time</b> and bucketed into the night’s phases — cut to the <b>“No Random Move”</b> theme (~136 BPM). Every transition and pulse lands on the beat.</div>
 
 <audio id="track" src="../assets/theme.wav" preload="auto"></audio>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
 <script src="photos.js"></script>
 <script>
 (function(){
   var C=document.getElementById('stage'), X=C.getContext('2d'), W=1080, H=1920;
   var AUD=document.getElementById('track');
-  var NAME=new URLSearchParams(location.search).get('name')||'Andi Wijaya';
-  document.getElementById('who').textContent=NAME;
-  document.getElementById('posterName').textContent=NAME;
+  var PARAMS=new URLSearchParams(location.search);
+  var TOKEN=PARAMS.get('g');
+  var NAME=PARAMS.get('name')||'Andi Wijaya';
+  function setName(n){ NAME=n; document.getElementById('who').textContent=n; document.getElementById('posterName').textContent=n; }
+  setName(NAME);
 
   var BPM=136.36, BEAT=60/BPM, OFFSET=0.06, FADE=0.22, MODE='hype';
-  var PHOTOS=window.MEMORY_PHOTOS||[];
+  var PHASE_TIME={ARRIVE:'14:00',CONNECT:'16:00',DINE:'19:00',CELEBRATE:'20:35',FAREWELL:'22:20'};
+  var PHOTOS=window.MEMORY_PHOTOS||[];   // default = sample reel
+
+  // When opened via a guest link (?g=token), pull THAT guest's real photos + name.
+  function resolveGuest(){
+    var CFG=window.JUNO_CONFIG||{};
+    if(!TOKEN || !window.supabase || !CFG.SUPABASE_URL || !CFG.SUPABASE_ANON_KEY) return Promise.resolve();
+    var sb=window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_ANON_KEY);
+    return Promise.all([ sb.rpc('get_guest_photos',{p_token:TOKEN}), sb.rpc('get_invitation',{p_token:TOKEN}) ])
+      .then(function(res){
+        var ph=res[0], inv=res[1];
+        if(!ph.error && ph.data && ph.data.length){
+          PHOTOS=ph.data.map(function(x){ return {src:x.path, phase:x.phase, time:PHASE_TIME[x.phase]||'', at:x.taken_at}; });
+        }
+        if(!inv.error && inv.data && inv.data[0] && inv.data[0].guest_name){ setName(inv.data[0].guest_name); }
+      }).catch(function(){});
+  }
 
   var A='../assets/';
   var SRC={badge:'badge.png',bg:'bg.jpg',coin:'coin.png',tagline:'tagline.png',wordmark:'wordmark.png'};
@@ -269,7 +289,8 @@ canvas{display:block;width:100%;height:100%;background:#000}
   };
 
   var fr=(document.fonts&&document.fonts.ready)?document.fonts.ready:Promise.resolve();
-  Promise.all([loadAll(),audioReady(),fr]).then(function(){ buildTimeline(); render(0); requestAnimationFrame(frame); });
+  resolveGuest().then(function(){ return Promise.all([loadAll(),audioReady(),fr]); })
+    .then(function(){ buildTimeline(); render(0); requestAnimationFrame(frame); });
 })();
 </script>
 </body>
