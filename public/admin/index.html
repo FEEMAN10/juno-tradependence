@@ -59,6 +59,19 @@ input:focus,select:focus{outline:none;border-color:var(--orange)}
 .awaiting-stat.active .n{color:var(--orange)}
 tr.row-awaiting td{background:rgba(232,105,10,.06)}
 tr.row-awaiting td:first-child{box-shadow:inset 3px 0 0 var(--orange)}
+/* tabs */
+.tabs{display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--line)}
+.tabs .tab{background:none;border:none;color:var(--muted);font-family:inherit;font-size:14px;font-weight:600;padding:10px 14px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs .tab.on{color:var(--paper);border-bottom-color:var(--orange)}
+/* faces */
+.grp{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.grp .faces{display:flex;gap:6px;flex-wrap:wrap;flex:1;min-width:200px}
+.face{position:relative}
+.face canvas{width:60px;height:60px;border-radius:8px;border:1px solid var(--line);display:block;background:#000}
+.face input{position:absolute;top:3px;left:3px;width:15px;height:15px;margin:0;accent-color:var(--orange)}
+.namebox{display:flex;flex-direction:column;gap:8px;min-width:210px}
+.namebox select{width:100%}
+.sec-h{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:16px 0 10px}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
 .row .field{margin-top:0;flex:1;min-width:150px}
 .sec-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:26px 0 12px}
@@ -127,6 +140,12 @@ tr:last-child td{border-bottom:none}
     ⚠ Supabase keys aren’t set in <code>config.js</code> — the dashboard can’t reach the backend.
   </div>
 
+  <div class="tabs">
+    <button class="tab on" data-tab="guests">Guests &amp; responses</button>
+    <button class="tab" data-tab="faces">Faces &amp; people</button>
+  </div>
+
+  <div id="tab-guests">
   <div class="stats" id="stats"></div>
 
   <div class="card">
@@ -150,6 +169,14 @@ tr:last-child td{border-bottom:none}
       </tr></thead>
       <tbody id="rows"></tbody>
     </table>
+  </div>
+  </div><!-- /tab-guests -->
+
+  <div id="tab-faces" style="display:none">
+    <div class="stats" id="fstats"></div>
+    <p class="muted" id="fhint" style="font-size:12.5px;margin:0 0 12px"></p>
+    <div id="fnamed"></div>
+    <div id="fgroups"></div>
   </div>
 </div></section>
 
@@ -307,6 +334,83 @@ tr:last-child td{border-bottom:none}
     var blob=new Blob([lines.join('\n')],{type:'text/csv'});
     var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='juno-guests.csv'; a.click();
     setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
+  });
+
+  // ==== FACES & PEOPLE tab (reuses DATA guest list; no ML — vectors already in Supabase) ====
+  var FTHRESH=0.52, FACES=null, FIMGS={}, facesLoaded=false;
+  function fdist(a,b){var s=0;for(var i=0;i<a.length;i++){var d=a[i]-b[i];s+=d*d;}return Math.sqrt(s);}
+  function floadImg(src){return new Promise(function(res){var i=new Image();i.crossOrigin='anonymous';i.onload=function(){res(i);};i.onerror=function(){res(null);};i.src=src;});}
+  function fcrop(f){var s=60,c=document.createElement('canvas');c.width=s;c.height=s;var x=c.getContext('2d');
+    var im=FIMGS[f.path];if(!im)return c;var b=f.bbox,m=b.w*0.25;
+    x.drawImage(im,Math.max(0,b.x-m),Math.max(0,b.y-m),b.w+m*2,b.h+m*2,0,0,s,s);return c;}
+  function fguestSelect(){ var s='<select><option value="">— choose guest —</option>';
+    DATA.forEach(function(g){ s+='<option value="'+g.id+'">'+esc(g.guest_name)+(g.guest_title?(' · '+esc(g.guest_title)):'')+'</option>'; });
+    return s+'</select>'; }
+
+  function loadFaces(){
+    if(!sb) return;
+    $('fhint').textContent='Loading faces…'; $('fnamed').innerHTML=''; $('fgroups').innerHTML='';
+    sb.rpc('admin_list_faces').then(function(fr){
+      if(fr.error){ $('fhint').innerHTML='⚠ Naming functions not installed yet. Run <code>supabase/people.sql</code> once, then reopen this tab. ('+esc(fr.error.message)+')'; return; }
+      FACES=(fr.data||[]).map(function(f){ f.vec=Float32Array.from(JSON.parse(f.embedding)); return f; });
+      if(!FACES.length){ $('fhint').innerHTML='No faces yet. Run the <a href="ingest.html">ingest tool</a> first.'; $('fstats').innerHTML=''; return; }
+      var paths=Array.from(new Set(FACES.map(function(f){return f.path;})));
+      Promise.all(paths.map(function(p){return floadImg('../memories/'+p).then(function(im){FIMGS[p]=im;});})).then(function(){ facesLoaded=true; renderFaces(); });
+    });
+  }
+  function renderFaces(){
+    var byPerson={}, un=[];
+    FACES.forEach(function(f){ if(f.person_id){(byPerson[f.person_id]=byPerson[f.person_id]||{name:f.person_name,faces:[]}).faces.push(f);} else un.push(f); });
+    var clusters=[];
+    un.forEach(function(f){ var best=-1,bd=FTHRESH;
+      for(var c=0;c<clusters.length;c++){var d=fdist(f.vec,clusters[c].c);if(d<bd){bd=d;best=c;}}
+      if(best>=0){var cl=clusters[best];cl.faces.push(f);var n=cl.faces.length,nd=new Float32Array(f.vec.length);for(var k=0;k<nd.length;k++)nd[k]=(cl.c[k]*(n-1)+f.vec[k])/n;cl.c=nd;}
+      else clusters.push({c:f.vec.slice(),faces:[f]}); });
+    clusters.sort(function(a,b){return b.faces.length-a.faces.length;});
+
+    var named=FACES.filter(function(f){return f.person_id;}).length;
+    $('fstats').innerHTML=
+      '<div class="stat"><div class="n mono">'+FACES.length+'</div><div class="l">Faces</div></div>'+
+      '<div class="stat"><div class="n mono">'+named+'</div><div class="l">Named</div></div>'+
+      '<div class="stat"><div class="n mono">'+Object.keys(byPerson).length+'</div><div class="l">People tagged</div></div>'+
+      '<div class="stat"><div class="n mono">'+clusters.length+'</div><div class="l">Groups to name</div></div>';
+    $('fhint').textContent='Tag each group with a guest. Uncheck any face that doesn’t belong first.';
+
+    var nh='';
+    Object.keys(byPerson).forEach(function(pid){var p=byPerson[pid];
+      nh+='<div class="grp" data-pid="'+pid+'"><div class="faces">'+p.faces.map(function(f){return '<div class="face" data-fid="'+f.id+'"></div>';}).join('')+
+        '</div><div class="namebox"><div style="font-weight:700">✓ '+esc(p.name||'Named')+'</div><div class="muted" style="font-size:12px">'+p.faces.length+' face(s)</div>'+
+        '<button class="btn btn-ghost btn-sm funname">Un-name</button></div></div>'; });
+    $('fnamed').innerHTML=nh?('<div class="sec-h">Named</div>'+nh):'';
+
+    var gh='<div class="sec-h">Suggested groups</div>';
+    if(!clusters.length) gh+='<div class="muted">All faces are named 🎉</div>';
+    clusters.forEach(function(cl,i){ gh+='<div class="grp"><div class="faces">'+
+      cl.faces.map(function(f){return '<div class="face" data-fid="'+f.id+'"><input type="checkbox" checked></div>';}).join('')+
+      '</div><div class="namebox"><div class="muted" style="font-size:12px">Group '+String.fromCharCode(65+i%26)+' · '+cl.faces.length+' face(s)</div>'+
+      fguestSelect()+'<button class="btn btn-primary funassign">Assign to guest</button></div></div>'; });
+    $('fgroups').innerHTML=gh;
+
+    var map={}; FACES.forEach(function(f){map[f.id]=f;});
+    document.querySelectorAll('#tab-faces .face').forEach(function(el){var f=map[el.dataset.fid];if(f)el.appendChild(fcrop(f));});
+    document.querySelectorAll('#fgroups .grp').forEach(function(g){ g.querySelector('.funassign').onclick=function(){
+      var sel=g.querySelector('select'),gid=sel.value; if(!gid){sel.focus();return;}
+      var ids=[]; g.querySelectorAll('.face').forEach(function(fe){var cb=fe.querySelector('input');if(cb&&cb.checked)ids.push(fe.dataset.fid);});
+      if(!ids.length)return; this.disabled=true; this.textContent='…';
+      sb.rpc('admin_name_cluster',{p_face_ids:ids,p_guest_id:gid}).then(function(r){ if(r.error){toast('Assign failed: '+r.error.message);} else {toast('Tagged');} loadFaces(); }); }; });
+    document.querySelectorAll('#fnamed .grp').forEach(function(g){ g.querySelector('.funname').onclick=function(){
+      var ids=[]; g.querySelectorAll('.face').forEach(function(fe){ids.push(fe.dataset.fid);});
+      sb.rpc('admin_unassign_faces',{p_face_ids:ids}).then(function(){ toast('Un-named'); loadFaces(); }); }; });
+  }
+
+  // tab switching
+  document.querySelector('.tabs').addEventListener('click', function(e){
+    var b=e.target.closest('.tab'); if(!b)return;
+    [].forEach.call(this.querySelectorAll('.tab'),function(x){x.classList.toggle('on',x===b);});
+    var t=b.dataset.tab;
+    $('tab-guests').style.display = t==='guests'?'block':'none';
+    $('tab-faces').style.display  = t==='faces'?'block':'none';
+    if(t==='faces') loadFaces();
   });
 
   // ---- boot: resume session if already signed in ----
