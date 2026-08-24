@@ -21,7 +21,6 @@ body{background:radial-gradient(120% 80% at 50% -10%,#191a1e 0%,#050506 60%);col
 .stagewrap{position:relative;height:min(78vh,760px);aspect-ratio:9/16;border-radius:20px;overflow:hidden;
   box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 1px rgba(237,237,234,.08)}
 canvas{display:block;width:100%;height:100%;background:#000}
-/* start poster */
 .poster{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:16px;background:radial-gradient(90% 60% at 50% 34%,rgba(232,105,10,.20),rgba(5,5,6,.92));cursor:pointer;z-index:3;transition:opacity .5s}
 .poster.hide{opacity:0;pointer-events:none}
@@ -31,7 +30,6 @@ canvas{display:block;width:100%;height:100%;background:#000}
 .poster .psub{font-size:13px;color:var(--muted);margin-top:2px}
 .playbtn{margin-top:8px;display:inline-flex;align-items:center;gap:9px;background:var(--orange);color:#140b04;
   font-weight:700;font-size:15px;padding:13px 26px;border-radius:999px;border:none;cursor:pointer;box-shadow:0 10px 30px rgba(232,105,10,.4)}
-/* controls */
 .ctl{display:flex;align-items:center;gap:12px;width:min(78vh*0.5625,428px);max-width:92vw}
 .ctl button{background:none;border:1px solid rgba(237,237,234,.2);color:var(--paper);border-radius:999px;
   width:38px;height:38px;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
@@ -67,64 +65,77 @@ canvas{display:block;width:100%;height:100%;background:#000}
   <button id="restartBtn" title="Restart">↺</button>
   <div class="bar" id="bar"><div class="fill" id="fill"></div></div>
   <div class="time" id="time">0:00 / 0:00</div>
-  <button id="muteBtn" title="Mute music">🔊</button>
+  <button id="muteBtn" title="Mute">🔊</button>
 </div>
 
-<div class="cap">Prototype · placeholder images from the event kit — <b>your real photos drop straight in</b>. Ken Burns motion, phase-timed to the real rundown, with a synthesized score.</div>
+<div class="cap">Prototype · placeholder images from the event kit — <b>your real photos drop straight in</b>. Cut to the <b>“No Random Move”</b> theme at ~136 BPM: every transition and pulse lands on the beat.</div>
+
+<audio id="track" src="../assets/theme.wav" preload="auto"></audio>
 
 <script>
 (function(){
   var C=document.getElementById('stage'), X=C.getContext('2d'), W=1080, H=1920;
-  var qName=new URLSearchParams(location.search).get('name');
-  var NAME=qName||'Andi Wijaya';
+  var AUD=document.getElementById('track');
+  var NAME=new URLSearchParams(location.search).get('name')||'Andi Wijaya';
   document.getElementById('who').textContent=NAME;
   document.getElementById('posterName').textContent=NAME;
+
+  // ---- beat grid (from offline analysis of the theme) ----
+  var BPM=136.36, BEAT=60/BPM, OFFSET=0.06;   // seconds
+  var FADE=0.22;                               // crossfade on the beat
 
   var A='../assets/';
   var SRC={badge:'badge.png',bg:'bg.jpg',coin:'coin.png',tagline:'tagline.png',wordmark:'wordmark.png',
     men:'dress_men.jpg',women:'dress_women.jpg',hijab:'dress_hijab.jpg',scarf:'dress_scarf_photo.jpg',
-    beef:'th_beef.jpg',salmon:'th_salmon.jpg',grill:'th_grillchicken.jpg',chick:'th_chickenpop.jpg',
-    ny:'th_ny.jpg',devil:'th_devil.jpg'};
+    beef:'th_beef.jpg',salmon:'th_salmon.jpg',grill:'th_grillchicken.jpg',ny:'th_ny.jpg'};
   var IMG={};
-  function load(){return Promise.all(Object.keys(SRC).map(function(k){return new Promise(function(res){
+  function loadImgs(){return Promise.all(Object.keys(SRC).map(function(k){return new Promise(function(res){
     var im=new Image(); im.onload=function(){IMG[k]=im;res();}; im.onerror=function(){res();}; im.src=A+SRC[k];
   });}));}
+  function audioReady(){return new Promise(function(res){
+    if(AUD.readyState>=1&&AUD.duration)res(); else AUD.addEventListener('loadedmetadata',function(){res();},{once:true});
+    AUD.addEventListener('error',function(){res();},{once:true});
+  });}
 
   function lerp(a,b,t){return a+(b-a)*t;}
   function clamp(v,a,b){return v<a?a:v>b?b:v;}
-  function ease(t){return t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;}
+  function ease(t){t=clamp(t,0,1);return t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;}
+  function rnd(s){var x=Math.sin(s*127.1+311.7)*43758.5453;return x-Math.floor(x);}
+  function kb(i){var d=rnd(i)<.5?-1:1;return {z0:1.06+rnd(i+1)*0.05,z1:1.20+rnd(i+2)*0.06,
+    px0:d*(0.15+rnd(i+3)*0.35),px1:-d*(0.15+rnd(i+4)*0.35),py0:(rnd(i+5)-.5)*0.4,py1:(rnd(i+6)-.5)*0.4};}
 
-  // deterministic pseudo-random from an integer seed (stable so seeking looks identical)
-  function rnd(seed){var x=Math.sin(seed*127.1+311.7)*43758.5453;return x-Math.floor(x);}
-  function kb(i){ // ken burns params per clip, varied but deterministic
-    var dir=rnd(i)<.5?-1:1;
-    return {z0:1.06+rnd(i+1)*0.05, z1:1.20+rnd(i+2)*0.06,
-            px0:dir*(0.15+rnd(i+3)*0.35), px1:-dir*(0.15+rnd(i+4)*0.35),
-            py0:(rnd(i+5)-.5)*0.4, py1:(rnd(i+6)-.5)*0.4};
+  // beat "pulse": a quick pop on each beat, bigger on bar downbeats
+  function beatPunch(T){
+    var ph=(T-OFFSET)/BEAT; if(ph<0)return 0; var idx=Math.floor(ph), frac=ph-idx;
+    var amp=(idx%4===0)?0.05:0.028; var d=(1-frac); return amp*d*d;
   }
 
-  // ---------- storyboard (uses the real event timeline as its arc) ----------
+  // ---- storyboard measured in BEATS (so cuts fall on the beat) ----
   var SB=[
-    {kind:'title', dur:3.4},
-    {kind:'photo', img:'men',   phase:'ARRIVE',    time:'14:00', dur:3.5},
-    {kind:'photo', img:'women', phase:null,        dur:3.2},
-    {kind:'photo', img:'scarf', phase:'CONNECT',   time:'16:00', dur:3.3},
-    {kind:'photo', img:'hijab', phase:null,        dur:3.2},
-    {kind:'photo', img:'beef',  phase:'DINE',      time:'19:00', dur:3.0},
-    {kind:'photo', img:'salmon',phase:null,        dur:2.8},
-    {kind:'photo', img:'grill', phase:null,        dur:2.8},
-    {kind:'fireworks',          phase:'FIREWORKS', time:'21:10', dur:5.6},
-    {kind:'photo', img:'ny',    phase:'CELEBRATE', time:null,    dur:2.8},
-    {kind:'photo', img:'coin',  phase:'FAREWELL',  time:'22:20', dur:3.0},
-    {kind:'end',                dur:4.4}
+    {kind:'title', beats:4},
+    {kind:'photo', img:'men',   phase:'ARRIVE',    time:'14:00', beats:4},
+    {kind:'photo', img:'women', beats:4},
+    {kind:'photo', img:'scarf', phase:'CONNECT',   time:'16:00', beats:4},
+    {kind:'photo', img:'beef',  phase:'DINE',      time:'19:00', beats:4},
+    {kind:'photo', img:'salmon',beats:4},
+    {kind:'fireworks',          phase:'FIREWORKS', time:'21:10', beats:8},
+    {kind:'photo', img:'ny',    phase:'CELEBRATE', beats:4},
+    {kind:'photo', img:'coin',  phase:'FAREWELL',  time:'22:20', beats:4},
+    {kind:'end',                beats:4}
   ];
-  var FADE=0.75;
-  var t=0; SB.forEach(function(c,i){c.i=i;c.kbp=kb(i*7+3);c.start=t;t+=c.dur-FADE;});
-  var TOTAL=SB[SB.length-1].start+SB[SB.length-1].dur;
+  var TOTAL=0;
+  function buildTimeline(){
+    var cum=0;
+    SB.forEach(function(c,i){ c.i=i; c.kbp=kb(i*7+3); c.start=OFFSET+cum*BEAT; c.dur=c.beats*BEAT; cum+=c.beats; });
+    var last=SB[SB.length-1];
+    var trackDur=(AUD.duration&&isFinite(AUD.duration))?AUD.duration:(last.start+last.dur);
+    last.dur=Math.max(last.dur, trackDur-last.start);   // hold end card until the music ends
+    TOTAL=trackDur;
+  }
 
-  // predefined firework bursts (deterministic → seekable)
-  var BURSTS=[]; (function(){var hues=['#ffd08a','#E8690A','#fff3e0','#f2a24a','#ffbf69','#E8690A'];
-    for(var b=0;b<7;b++){BURSTS.push({t0:0.3+b*0.72, x:W*(0.22+rnd(b*3)*0.56), y:H*(0.24+rnd(b*3+1)*0.34), col:hues[b%hues.length], seed:b*11});}})();
+  // fireworks bursts on the beat during the FIREWORKS clip
+  var BURSTS=[]; (function(){var hues=['#ffd08a','#E8690A','#fff3e0','#f2a24a','#ffbf69','#E8690A','#ffd08a','#E8690A'];
+    for(var b=0;b<8;b++){BURSTS.push({beat:b, x:W*(0.20+rnd(b*3)*0.60), y:H*(0.22+rnd(b*3+1)*0.36), col:hues[b%hues.length], seed:b*11});}})();
 
   // ---------- drawing ----------
   function drawCover(img,zoom,px,py,alpha){
@@ -133,148 +144,100 @@ canvas{display:block;width:100%;height:100%;background:#000}
     var x=(W-dw)/2+px*(dw-W)/2, y=(H-dh)/2+py*(dh-H)/2;
     X.globalAlpha=alpha; X.drawImage(img,x,y,dw,dh); X.globalAlpha=1;
   }
-  function photoTone(alpha){ // cinematic darken + orange grade
-    X.globalAlpha=alpha;
-    var g=X.createLinearGradient(0,0,0,H); g.addColorStop(0,'rgba(8,7,5,.28)'); g.addColorStop(.5,'rgba(8,7,5,.05)'); g.addColorStop(1,'rgba(6,5,4,.55)');
-    X.fillStyle=g; X.fillRect(0,0,W,H); X.globalAlpha=1;
-  }
-  function drawPhoto(c,p,alpha){
-    var k=c.kbp, z=lerp(k.z0,k.z1,ease(p)), px=lerp(k.px0,k.px1,ease(p)), py=lerp(k.py0,k.py1,ease(p));
-    X.fillStyle='#000'; if(alpha>=1){X.fillRect(0,0,W,H);}
-    drawCover(IMG[c.img],z,px,py,alpha); photoTone(alpha);
+  function tone(alpha){X.globalAlpha=alpha;var g=X.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,'rgba(8,7,5,.28)');g.addColorStop(.5,'rgba(8,7,5,.05)');g.addColorStop(1,'rgba(6,5,4,.55)');
+    X.fillStyle=g;X.fillRect(0,0,W,H);X.globalAlpha=1;}
+  function drawPhoto(c,localT,alpha,T){
+    var p=clamp(localT/c.dur,0,1), k=c.kbp;
+    var z=lerp(k.z0,k.z1,ease(p))*(1+beatPunch(T));
+    var px=lerp(k.px0,k.px1,ease(p)), py=lerp(k.py0,k.py1,ease(p));
+    if(alpha>=1){X.fillStyle='#000';X.fillRect(0,0,W,H);}
+    drawCover(IMG[c.img],z,px,py,alpha); tone(alpha);
   }
   function drawFireworks(c,localT,alpha){
-    // dim ambient background
-    drawCover(IMG.bg,1.15,0,0,alpha*0.5);
-    X.globalAlpha=alpha; X.fillStyle='rgba(4,4,6,.55)'; X.fillRect(0,0,W,H); X.globalAlpha=1;
+    drawCover(IMG.bg,1.15*(1+beatPunch(localT+c.start)*0.6),0,0,alpha*0.5);
+    X.globalAlpha=alpha;X.fillStyle='rgba(4,4,6,.55)';X.fillRect(0,0,W,H);X.globalAlpha=1;
     X.globalCompositeOperation='lighter';
-    for(var bi=0;bi<BURSTS.length;bi++){var B=BURSTS[bi], age=localT-B.t0, life=2.2;
-      if(age<0||age>=life)continue; var N=40;
+    for(var bi=0;bi<BURSTS.length;bi++){var B=BURSTS[bi], bt=B.beat*BEAT, age=localT-bt, life=BEAT*3.4;
+      if(age<0||age>=life)continue; var N=42;
       for(var k=0;k<N;k++){var ang=k/N*Math.PI*2, sp=2.6+rnd(B.seed+k)*3.4;
-        var vx=Math.cos(ang)*sp, vy=Math.sin(ang)*sp;
-        var x=B.x+vx*age*80, y=B.y+vy*age*80+0.5*260*age*age;
+        var x=B.x+Math.cos(ang)*sp*age*90, y=B.y+Math.sin(ang)*sp*age*90+0.5*260*age*age;
         var a=alpha*clamp(1-age/life,0,1); if(a<=0)continue;
-        var r=6*(1-age/life)+1.5; X.globalAlpha=a; X.fillStyle=B.col;
-        X.beginPath(); X.arc(x,y,r,0,7); X.fill();
+        X.globalAlpha=a; X.fillStyle=B.col; X.beginPath(); X.arc(x,y,6*(1-age/life)+1.5,0,7); X.fill();
       }
     }
-    X.globalAlpha=1; X.globalCompositeOperation='source-over';
+    X.globalAlpha=1;X.globalCompositeOperation='source-over';
   }
-  function textCard(alpha,lines){
-    X.fillStyle='#000'; X.globalAlpha=alpha; X.fillRect(0,0,W,H);
-    var g=X.createRadialGradient(W/2,H*0.36,60,W/2,H*0.36,W*0.9); g.addColorStop(0,'rgba(232,105,10,.22)'); g.addColorStop(1,'rgba(232,105,10,0)');
-    X.fillStyle=g; X.fillRect(0,0,W,H); X.globalAlpha=1;
-    lines(alpha);
-  }
-  function drawTitle(c,p,alpha){
-    textCard(alpha,function(a){
-      X.globalAlpha=a; X.textAlign='center';
-      if(IMG.badge){var bw=W*0.66,bh=IMG.badge.height*(bw/IMG.badge.width); X.drawImage(IMG.badge,(W-bw)/2,H*0.20,bw,bh);}
-      X.fillStyle='#F08A2E'; X.font='600 34px "Source Sans 3",sans-serif';
-      try{X.letterSpacing='6px';}catch(e){} X.fillText('A TRADEPENDENCE MEMORY',W/2,H*0.60); try{X.letterSpacing='0px';}catch(e){}
-      X.fillStyle='#F4F4F1'; X.font='900 118px "Source Sans 3",sans-serif'; X.fillText('Your Night',W/2,H*0.685);
-      X.fillStyle='#F4F4F1'; X.font='700 64px "Source Sans 3",sans-serif'; X.fillText(NAME,W/2,H*0.745);
-      X.fillStyle='#c9ccd1'; X.font='400 34px "Source Sans 3",sans-serif'; X.fillText('Jakarta Phinisi · 18 August 2026',W/2,H*0.80);
-      X.globalAlpha=1;
-    });
-  }
-  function drawEnd(c,p,alpha){
-    textCard(alpha,function(a){
-      X.globalAlpha=a; X.textAlign='center';
-      if(IMG.coin){var cw=W*0.30,ch=IMG.coin.height*(cw/IMG.coin.width); X.drawImage(IMG.coin,(W-cw)/2,H*0.24,cw,ch);}
-      X.fillStyle='#F08A2E'; X.font='600 30px "Source Sans 3",sans-serif'; try{X.letterSpacing='5px';}catch(e){}
-      X.fillText('SEE YOU ON BOARD',W/2,H*0.50); try{X.letterSpacing='0px';}catch(e){}
-      X.fillStyle='#F4F4F1'; X.font='700 60px "Source Sans 3",sans-serif'; X.fillText(NAME,W/2,H*0.565);
-      if(IMG.tagline){var tw=W*0.5,th=IMG.tagline.height*(tw/IMG.tagline.width); X.globalAlpha=a*0.95; X.drawImage(IMG.tagline,(W-tw)/2,H*0.63,tw,th);}
-      if(IMG.wordmark){var mw=W*0.2,mh=IMG.wordmark.height*(mw/IMG.wordmark.width); X.globalAlpha=a*0.8; X.drawImage(IMG.wordmark,(W-mw)/2,H*0.74,mw,mh);}
-      X.globalAlpha=1;
-    });
-  }
+  function card(alpha,body){X.fillStyle='#000';X.globalAlpha=alpha;X.fillRect(0,0,W,H);
+    var g=X.createRadialGradient(W/2,H*0.36,60,W/2,H*0.36,W*0.9);g.addColorStop(0,'rgba(232,105,10,.22)');g.addColorStop(1,'rgba(232,105,10,0)');
+    X.fillStyle=g;X.fillRect(0,0,W,H);X.globalAlpha=1;body(alpha);}
+  function drawTitle(c,localT,alpha,T){card(alpha,function(a){X.globalAlpha=a;X.textAlign='center';
+    var pop=1+beatPunch(T)*0.8;
+    if(IMG.badge){var bw=W*0.66*pop,bh=IMG.badge.height*(bw/IMG.badge.width);X.drawImage(IMG.badge,(W-bw)/2,H*0.20-(bh-IMG.badge.height*(W*0.66/IMG.badge.width))/2,bw,bh);}
+    X.fillStyle='#F08A2E';X.font='600 34px "Source Sans 3",sans-serif';try{X.letterSpacing='6px';}catch(e){}
+    X.fillText('A TRADEPENDENCE MEMORY',W/2,H*0.60);try{X.letterSpacing='0px';}catch(e){}
+    X.fillStyle='#F4F4F1';X.font='900 118px "Source Sans 3",sans-serif';X.fillText('Your Night',W/2,H*0.685);
+    X.fillStyle='#F4F4F1';X.font='700 64px "Source Sans 3",sans-serif';X.fillText(NAME,W/2,H*0.745);
+    X.fillStyle='#c9ccd1';X.font='400 34px "Source Sans 3",sans-serif';X.fillText('Jakarta Phinisi · 18 August 2026',W/2,H*0.80);X.globalAlpha=1;});}
+  function drawEnd(c,localT,alpha){card(alpha,function(a){X.globalAlpha=a;X.textAlign='center';
+    if(IMG.coin){var cw=W*0.30,ch=IMG.coin.height*(cw/IMG.coin.width);X.drawImage(IMG.coin,(W-cw)/2,H*0.24,cw,ch);}
+    X.fillStyle='#F08A2E';X.font='600 30px "Source Sans 3",sans-serif';try{X.letterSpacing='5px';}catch(e){}
+    X.fillText('SEE YOU ON BOARD',W/2,H*0.50);try{X.letterSpacing='0px';}catch(e){}
+    X.fillStyle='#F4F4F1';X.font='700 60px "Source Sans 3",sans-serif';X.fillText(NAME,W/2,H*0.565);
+    if(IMG.tagline){var tw=W*0.5,th=IMG.tagline.height*(tw/IMG.tagline.width);X.globalAlpha=a*0.95;X.drawImage(IMG.tagline,(W-tw)/2,H*0.63,tw,th);}
+    if(IMG.wordmark){var mw=W*0.2,mh=IMG.wordmark.height*(mw/IMG.wordmark.width);X.globalAlpha=a*0.8;X.drawImage(IMG.wordmark,(W-mw)/2,H*0.74,mw,mh);}X.globalAlpha=1;});}
 
-  function overlays(topClip,topLocalT){
-    // vignette
-    var v=X.createRadialGradient(W/2,H*0.46,H*0.28,W/2,H*0.5,H*0.72);
-    v.addColorStop(0,'rgba(0,0,0,0)'); v.addColorStop(1,'rgba(0,0,0,.5)'); X.fillStyle=v; X.fillRect(0,0,W,H);
-    // phase lower-third
-    if(topClip&&topClip.phase){
-      var a=clamp(topLocalT/0.5,0,1)*clamp((2.6-topLocalT)/0.6,0,1);
-      if(a>0.01){ X.globalAlpha=a; X.textAlign='left';
-        if(topClip.time){X.fillStyle='#F08A2E'; X.font='700 40px "Source Sans 3",sans-serif'; X.fillText(topClip.time, 70, H-150);}
-        X.fillStyle='#F4F4F1'; X.font='900 72px "Source Sans 3",sans-serif'; X.fillText(topClip.phase, 68, H-78);
-        X.globalAlpha=1;
-      }
-    }
-    // persistent tiny watermark
-    X.globalAlpha=.5; X.textAlign='center'; X.fillStyle='#c9ccd1'; X.font='600 24px "Source Sans 3",sans-serif';
-    try{X.letterSpacing='3px';}catch(e){} X.fillText('JUNO · TRADEPENDENCE DAY 2026', W/2, 64); try{X.letterSpacing='0px';}catch(e){} X.globalAlpha=1;
+  function overlays(top,topLocalT){
+    var v=X.createRadialGradient(W/2,H*0.46,H*0.28,W/2,H*0.5,H*0.72);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(0,0,0,.5)');
+    X.fillStyle=v;X.fillRect(0,0,W,H);
+    if(top&&top.phase){var a=clamp(topLocalT/0.3,0,1)*clamp((top.dur-topLocalT)/0.5,0,1)*clamp((BEAT*5-topLocalT)/0.5,0,1);
+      if(a>0.01){X.globalAlpha=a;X.textAlign='left';
+        if(top.time){X.fillStyle='#F08A2E';X.font='700 40px "Source Sans 3",sans-serif';X.fillText(top.time,70,H-150);}
+        X.fillStyle='#F4F4F1';X.font='900 72px "Source Sans 3",sans-serif';X.fillText(top.phase,68,H-78);X.globalAlpha=1;}}
+    X.globalAlpha=.5;X.textAlign='center';X.fillStyle='#c9ccd1';X.font='600 24px "Source Sans 3",sans-serif';
+    try{X.letterSpacing='3px';}catch(e){}X.fillText('JUNO · TRADEPENDENCE DAY 2026',W/2,64);try{X.letterSpacing='0px';}catch(e){}X.globalAlpha=1;
   }
 
   function render(T){
-    X.fillStyle='#000'; X.fillRect(0,0,W,H);
-    var top=null, topLocal=0;
-    for(var i=0;i<SB.length;i++){var c=SB[i]; if(T>=c.start && T<c.start+c.dur){
-      var localT=T-c.start, p=localT/c.dur, alpha=clamp(localT/FADE,0,1);
-      if(i===0)alpha=clamp(localT/0.6,0,1); // first fades from black
-      if(c.kind==='photo')drawPhoto(c,p,alpha);
-      else if(c.kind==='fireworks')drawFireworks(c,localT,alpha);
-      else if(c.kind==='title')drawTitle(c,p,alpha);
-      else if(c.kind==='end')drawEnd(c,p,alpha);
-      top=c; topLocal=localT;
-    }}
+    X.fillStyle='#000';X.fillRect(0,0,W,H);
+    var top=null,topLocal=0;
+    for(var i=0;i<SB.length;i++){var c=SB[i];
+      if(T>=c.start && T<c.start+c.dur+FADE){          // linger FADE past end so crossfade has no black gap
+        var localT=T-c.start, alpha=clamp(localT/FADE,0,1); if(i===0)alpha=clamp(localT/0.5,0,1);
+        if(c.kind==='photo')drawPhoto(c,localT,alpha,T);
+        else if(c.kind==='fireworks')drawFireworks(c,localT,alpha);
+        else if(c.kind==='title')drawTitle(c,localT,alpha,T);
+        else if(c.kind==='end')drawEnd(c,localT,alpha);
+        if(localT<c.dur){top=c;topLocal=localT;}
+      }
+    }
     overlays(top,topLocal);
-    audioPhase(top);
   }
 
-  // ---------- clock / controls ----------
-  var elapsed=0,playing=false,last=0,started=false;
+  // ---------- clock driven by the audio ----------
   var poster=document.getElementById('poster'), playBtn=document.getElementById('playBtn'),
       fill=document.getElementById('fill'), timeEl=document.getElementById('time'), bar=document.getElementById('bar');
+  var lastT=0;
   function fmt(s){s=Math.max(0,s|0);return (s/60|0)+':'+('0'+(s%60)).slice(-2);}
-  function frame(ts){
-    if(playing){elapsed+=(ts-last)/1000;last=ts; if(elapsed>=TOTAL){elapsed=TOTAL;playing=false;playBtn.textContent='↺';}}
-    render(Math.min(elapsed,TOTAL-0.001));
-    fill.style.width=(elapsed/TOTAL*100)+'%'; timeEl.textContent=fmt(elapsed)+' / '+fmt(TOTAL);
+  function frame(){
+    var T=AUD.paused?lastT:AUD.currentTime; lastT=T;
+    render(Math.min(T,TOTAL));
+    fill.style.width=(TOTAL?T/TOTAL*100:0)+'%'; timeEl.textContent=fmt(T)+' / '+fmt(TOTAL);
+    if(AUD.paused && T>=TOTAL-0.02) playBtn.textContent='↺';
     requestAnimationFrame(frame);
   }
-  function play(){ if(elapsed>=TOTAL)elapsed=0; playing=true; last=performance.now(); playBtn.textContent='❚❚';
-    poster.classList.add('hide'); startAudio(); }
-  function pause(){ playing=false; playBtn.textContent='▶'; }
-  playBtn.onclick=function(){ playing?pause():play(); };
-  document.getElementById('restartBtn').onclick=function(){ elapsed=0; play(); };
+  function play(){ if(AUD.ended||AUD.currentTime>=TOTAL-0.02)AUD.currentTime=0; AUD.play(); playBtn.textContent='❚❚'; poster.classList.add('hide'); }
+  function pause(){ AUD.pause(); playBtn.textContent='▶'; }
+  playBtn.onclick=function(){ AUD.paused?play():pause(); };
+  document.getElementById('restartBtn').onclick=function(){ AUD.currentTime=0; play(); };
   poster.onclick=play;
-  bar.onclick=function(e){var r=bar.getBoundingClientRect(); elapsed=clamp((e.clientX-r.left)/r.width,0,1)*TOTAL; if(!playing){render(elapsed);} };
-
-  // ---------- synthesized ambient score (Web Audio) ----------
-  var ac,master,filter,muted=false,audioOn=false;
-  function startAudio(){
-    if(audioOn){ if(ac&&ac.state==='suspended')ac.resume(); return; }
-    try{
-      ac=new (window.AudioContext||window.webkitAudioContext)();
-      master=ac.createGain(); master.gain.value=0; master.connect(ac.destination);
-      filter=ac.createBiquadFilter(); filter.type='lowpass'; filter.frequency.value=700; filter.Q.value=6; filter.connect(master);
-      var notes=[110,164.81,220,277.18]; // A2 E3 A3 C#4-ish warm pad
-      notes.forEach(function(f,i){var o=ac.createOscillator(); o.type=i%2?'triangle':'sine'; o.frequency.value=f;
-        var g=ac.createGain(); g.gain.value=0.06; o.connect(g); g.connect(filter); o.start();
-        var lfo=ac.createOscillator(); lfo.frequency.value=0.05+i*0.01; var lg=ac.createGain(); lg.gain.value=0.02;
-        lfo.connect(lg); lg.connect(g.gain); lfo.start();
-      });
-      // soft pulse
-      setInterval(function(){ if(!ac||muted)return; var o=ac.createOscillator(); o.type='sine'; o.frequency.value=55;
-        var g=ac.createGain(); g.gain.value=0; o.connect(g); g.connect(master); var now=ac.currentTime;
-        g.gain.linearRampToValueAtTime(0.10,now+0.05); g.gain.linearRampToValueAtTime(0,now+0.7); o.start(now); o.stop(now+0.8);
-      },2000);
-      master.gain.linearRampToValueAtTime(0.22,ac.currentTime+2.5);
-      audioOn=true;
-    }catch(e){}
-  }
-  function audioPhase(top){ if(!ac||!filter)return; var bright=(top&&top.kind==='fireworks')?2200:700;
-    try{filter.frequency.setTargetAtTime(bright,ac.currentTime,0.6);}catch(e){} }
-  document.getElementById('muteBtn').onclick=function(){ muted=!muted; this.textContent=muted?'🔇':'🔊';
-    if(master&&ac)master.gain.setTargetAtTime(muted?0:0.22,ac.currentTime,0.2); };
+  AUD.addEventListener('ended',function(){ playBtn.textContent='↺'; });
+  bar.onclick=function(e){var r=bar.getBoundingClientRect(); var t=clamp((e.clientX-r.left)/r.width,0,1)*TOTAL; AUD.currentTime=t; lastT=t; if(AUD.paused)render(t); };
+  document.getElementById('muteBtn').onclick=function(){ AUD.muted=!AUD.muted; this.textContent=AUD.muted?'🔇':'🔊'; };
 
   // ---------- boot ----------
   var fr=(document.fonts&&document.fonts.ready)?document.fonts.ready:Promise.resolve();
-  Promise.all([load(),fr]).then(function(){ render(0); requestAnimationFrame(frame); });
+  Promise.all([loadImgs(),audioReady(),fr]).then(function(){ buildTimeline(); render(0); requestAnimationFrame(frame); });
 })();
 </script>
 </body>
