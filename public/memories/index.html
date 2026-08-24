@@ -63,6 +63,14 @@ canvas{display:block;width:100%;height:100%;background:#000}
 .expbtn{background:none;border:1px solid rgba(237,237,234,.2);color:var(--paper);border-radius:999px;font-family:var(--sans);font-size:12.5px;font-weight:600;padding:7px 15px;cursor:pointer}
 .expbtn:hover{border-color:var(--orange);color:var(--orange)}
 .expbtn[disabled]{opacity:.7;cursor:default}
+/* immersive "theater" playback (CSS fullscreen — works on iOS too) */
+.stagewrap canvas{cursor:pointer}
+.theater-close{position:absolute;top:14px;right:16px;z-index:96;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:17px;width:40px;height:40px;border-radius:50%;cursor:pointer;display:none;align-items:center;justify-content:center}
+.stagewrap.theater{position:fixed;inset:0;z-index:95;height:100vh;height:100dvh;width:100vw;max-width:none;aspect-ratio:auto;border-radius:0;box-shadow:none;background:#000;display:flex;align-items:center;justify-content:center;margin:0}
+.stagewrap.theater canvas{width:auto;height:100vh;height:100dvh;max-width:100vw}
+.stagewrap.theater .poster{border-radius:0}
+.stagewrap.theater .theater-close{display:flex}
+body.theater-on{overflow:hidden}
 </style>
 </head>
 <body>
@@ -71,8 +79,9 @@ canvas{display:block;width:100%;height:100%;background:#000}
   <h1 id="title">Your Night — <span id="who">Andi Wijaya</span></h1>
 </div>
 
-<div class="stagewrap">
+<div class="stagewrap" id="stagewrap">
   <canvas id="stage" width="1080" height="1920"></canvas>
+  <button class="theater-close" id="theaterClose" aria-label="Close">✕</button>
   <div class="poster" id="poster">
     <img src="../assets/badge.png" alt="">
     <div style="text-align:center">
@@ -90,6 +99,7 @@ canvas{display:block;width:100%;height:100%;background:#000}
   <div class="bar" id="bar"><div class="fill" id="fill"></div></div>
   <div class="time" id="time">0:00 / 0:00</div>
   <button id="muteBtn" title="Mute">🔊</button>
+  <button id="fsBtn" title="Enlarge">⛶</button>
 </div>
 <div class="ctl2">
   <div class="seg" id="paceSeg"><button data-mode="hype" class="on">Hype</button><button data-mode="cine">Cinematic</button></div>
@@ -300,7 +310,17 @@ canvas{display:block;width:100%;height:100%;background:#000}
   function pause(){ AUD.pause(); playBtn.textContent='▶'; }
   playBtn.onclick=function(){ AUD.paused?play():pause(); };
   document.getElementById('restartBtn').onclick=function(){ AUD.currentTime=0; play(); };
-  poster.onclick=play;
+
+  // ---- immersive "theater" playback ----
+  var stagewrap=document.getElementById('stagewrap');
+  function enterTheater(){ stagewrap.classList.add('theater'); document.body.classList.add('theater-on'); }
+  function exitTheater(){ stagewrap.classList.remove('theater'); document.body.classList.remove('theater-on'); }
+  poster.onclick=function(){ enterTheater(); play(); };                 // tap the cover -> plays full-screen
+  document.getElementById('fsBtn').onclick=function(){ enterTheater(); if(AUD.paused) play(); };
+  document.getElementById('theaterClose').onclick=function(e){ e.stopPropagation(); exitTheater(); };
+  C.addEventListener('click',function(){ AUD.paused?play():pause(); });  // tap the video to play/pause
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape' && stagewrap.classList.contains('theater')) exitTheater(); });
+
   AUD.addEventListener('ended',function(){ playBtn.textContent='↺'; });
   bar.onclick=function(e){var r=bar.getBoundingClientRect();var t=clamp((e.clientX-r.left)/r.width,0,1)*TOTAL;AUD.currentTime=t;lastT=t;if(AUD.paused)render(t);};
   // ---- audio graph (built lazily; needed for export, also carries live sound afterwards) ----
