@@ -39,6 +39,13 @@ canvas{display:block;width:100%;height:100%;background:#000}
 .time{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;flex:0 0 auto;min-width:66px;text-align:right}
 .cap{font-size:12px;color:var(--muted);max-width:460px;text-align:center;line-height:1.5}
 .cap b{color:#c9ccd1;font-weight:600}
+.ctl2{display:flex;align-items:center;gap:12px;width:min(78vh*0.5625,428px);max-width:92vw;justify-content:space-between}
+.seg{display:inline-flex;border:1px solid rgba(237,237,234,.2);border-radius:999px;overflow:hidden}
+.seg button{background:none;border:none;color:var(--muted);font-family:var(--sans);font-size:12.5px;font-weight:600;padding:7px 15px;cursor:pointer}
+.seg button.on{background:var(--orange);color:#140b04}
+.expbtn{background:none;border:1px solid rgba(237,237,234,.2);color:var(--paper);border-radius:999px;font-family:var(--sans);font-size:12.5px;font-weight:600;padding:7px 15px;cursor:pointer}
+.expbtn:hover{border-color:var(--orange);color:var(--orange)}
+.expbtn[disabled]{opacity:.7;cursor:default}
 </style>
 </head>
 <body>
@@ -67,6 +74,10 @@ canvas{display:block;width:100%;height:100%;background:#000}
   <div class="time" id="time">0:00 / 0:00</div>
   <button id="muteBtn" title="Mute">🔊</button>
 </div>
+<div class="ctl2">
+  <div class="seg" id="paceSeg"><button data-mode="hype" class="on">Hype</button><button data-mode="cine">Cinematic</button></div>
+  <button id="exportBtn" class="expbtn">⤓ Save video</button>
+</div>
 
 <div class="cap">Real event photos, <b>ordered by capture time</b> and bucketed into the night’s phases — cut to the <b>“No Random Move”</b> theme (~136 BPM). Every transition and pulse lands on the beat.</div>
 
@@ -80,7 +91,7 @@ canvas{display:block;width:100%;height:100%;background:#000}
   document.getElementById('who').textContent=NAME;
   document.getElementById('posterName').textContent=NAME;
 
-  var BPM=136.36, BEAT=60/BPM, OFFSET=0.06, FADE=0.22;
+  var BPM=136.36, BEAT=60/BPM, OFFSET=0.06, FADE=0.22, MODE='hype';
   var PHOTOS=window.MEMORY_PHOTOS||[];
 
   var A='../assets/';
@@ -101,23 +112,27 @@ canvas{display:block;width:100%;height:100%;background:#000}
   function clamp(v,a,b){return v<a?a:v>b?b:v;}
   function ease(t){t=clamp(t,0,1);return t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;}
   function rnd(s){var x=Math.sin(s*127.1+311.7)*43758.5453;return x-Math.floor(x);}
-  function kb(i){var d=rnd(i)<.5?-1:1;return {z0:1.04+rnd(i+1)*0.04,z1:1.13+rnd(i+2)*0.05,
-    px0:d*(0.10+rnd(i+3)*0.28),px1:-d*(0.10+rnd(i+4)*0.28),py0:(rnd(i+5)-.5)*0.28,py1:(rnd(i+6)-.5)*0.28};}
+  function kb(i,cine){var d=rnd(i)<.5?-1:1,m=cine?1.7:1;return {z0:1.04+rnd(i+1)*0.04,z1:(cine?1.20:1.13)+rnd(i+2)*0.05,
+    px0:d*(0.10+rnd(i+3)*0.28)*m,px1:-d*(0.10+rnd(i+4)*0.28)*m,py0:(rnd(i+5)-.5)*0.28*m,py1:(rnd(i+6)-.5)*0.28*m};}
   function beatPunch(T){var ph=(T-OFFSET)/BEAT;if(ph<0)return 0;var idx=Math.floor(ph),frac=ph-idx;
     var amp=(idx%4===0)?0.045:0.025;var d=1-frac;return amp*d*d;}
 
   // ---- storyboard: title → photos (2 beats each) → end, on the beat grid ----
   var SB=[], TOTAL=0;
   function buildTimeline(){
+    var cine=(MODE==='cine');
+    FADE=cine?0.5:0.22;
+    var list=cine?PHOTOS.filter(function(_,i){return i%2===0;}):PHOTOS;  // cinematic = fewer heroes, longer holds
+    var pbeats=cine?4:2;
     SB=[{kind:'title', beats:4}];
     var prevPhase=null;
-    PHOTOS.forEach(function(p){
-      SB.push({kind:'photo', im:p.im, phase:p.phase, time:p.time, first:(p.phase!==prevPhase), beats:2});
+    list.forEach(function(p){
+      SB.push({kind:'photo', im:p.im, phase:p.phase, time:p.time, first:(p.phase!==prevPhase), beats:pbeats});
       prevPhase=p.phase;
     });
     SB.push({kind:'end', beats:4});
     var cum=0;
-    SB.forEach(function(c,i){ c.i=i; c.kbp=kb(i*7+3); c.start=OFFSET+cum*BEAT; c.dur=c.beats*BEAT; cum+=c.beats; });
+    SB.forEach(function(c,i){ c.i=i; c.kbp=kb(i*7+3,cine); c.start=OFFSET+cum*BEAT; c.dur=c.beats*BEAT; cum+=c.beats; });
     var last=SB[SB.length-1];
     var trackDur=(AUD.duration&&isFinite(AUD.duration))?AUD.duration:(last.start+last.dur);
     last.dur=Math.max(last.dur, trackDur-last.start);
@@ -202,7 +217,56 @@ canvas{display:block;width:100%;height:100%;background:#000}
   poster.onclick=play;
   AUD.addEventListener('ended',function(){ playBtn.textContent='↺'; });
   bar.onclick=function(e){var r=bar.getBoundingClientRect();var t=clamp((e.clientX-r.left)/r.width,0,1)*TOTAL;AUD.currentTime=t;lastT=t;if(AUD.paused)render(t);};
-  document.getElementById('muteBtn').onclick=function(){ AUD.muted=!AUD.muted; this.textContent=AUD.muted?'🔇':'🔊'; };
+  // ---- audio graph (built lazily; needed for export, also carries live sound afterwards) ----
+  var actx,asrc,gVol,streamDest,uiMuted=false;
+  function ensureGraph(){
+    if(actx) { if(actx.state==='suspended')actx.resume(); return; }
+    try{
+      actx=new (window.AudioContext||window.webkitAudioContext)();
+      asrc=actx.createMediaElementSource(AUD); AUD.muted=false;
+      gVol=actx.createGain(); gVol.gain.value=uiMuted?0:1;
+      asrc.connect(gVol); gVol.connect(actx.destination);
+      streamDest=actx.createMediaStreamDestination(); gVol.connect(streamDest);
+    }catch(e){}
+  }
+  document.getElementById('muteBtn').onclick=function(){ uiMuted=!uiMuted;
+    if(gVol) gVol.gain.value=uiMuted?0:1; else AUD.muted=uiMuted;
+    this.textContent=uiMuted?'🔇':'🔊'; };
+
+  // ---- pace toggle ----
+  document.getElementById('paceSeg').addEventListener('click',function(e){
+    var b=e.target.closest('[data-mode]'); if(!b||b.dataset.mode===MODE)return;
+    MODE=b.dataset.mode;
+    [].forEach.call(this.querySelectorAll('button'),function(x){x.classList.toggle('on',x===b);});
+    AUD.pause(); AUD.currentTime=0; lastT=0; buildTimeline(); render(0); playBtn.textContent='▶'; poster.classList.remove('hide');
+  });
+
+  // ---- export to video (canvas + audio -> file) ----
+  var recording=false, exportBtn=document.getElementById('exportBtn');
+  function pickMime(){var c=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
+    for(var i=0;i<c.length;i++){ if(window.MediaRecorder&&MediaRecorder.isTypeSupported(c[i]))return c[i]; } return '';}
+  exportBtn.onclick=function(){
+    if(recording||!window.MediaRecorder){ if(!window.MediaRecorder)alert('Video export not supported in this browser.'); return; }
+    ensureGraph();
+    var mime=pickMime(); var prev=gVol?gVol.gain.value:1; if(gVol)gVol.gain.value=1;
+    var stream=new MediaStream();
+    C.captureStream(30).getVideoTracks().forEach(function(t){stream.addTrack(t);});
+    if(streamDest) streamDest.stream.getAudioTracks().forEach(function(t){stream.addTrack(t);});
+    var rec; try{ rec=new MediaRecorder(stream, mime?{mimeType:mime,videoBitsPerSecond:6000000}:{}); }catch(e){ alert('Recorder error: '+e.message); if(gVol)gVol.gain.value=prev; return; }
+    var chunks=[]; rec.ondataavailable=function(e){ if(e.data&&e.data.size)chunks.push(e.data); };
+    rec.onstop=function(){
+      var ext=(mime.indexOf('mp4')>=0)?'mp4':'webm';
+      var blob=new Blob(chunks,{type:mime||'video/webm'});
+      var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+      a.download='juno-your-night-'+NAME.replace(/\s+/g,'-')+'.'+ext;
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+      if(gVol)gVol.gain.value=uiMuted?0:prev; recording=false; exportBtn.disabled=false; exportBtn.textContent='⤓ Save video';
+    };
+    var onEnd=function(){ AUD.removeEventListener('ended',onEnd); if(rec.state!=='inactive')rec.stop(); };
+    AUD.addEventListener('ended',onEnd);
+    recording=true; exportBtn.disabled=true; exportBtn.textContent='● Recording…';
+    poster.classList.add('hide'); AUD.currentTime=0; lastT=0; rec.start(); AUD.play(); playBtn.textContent='❚❚';
+  };
 
   var fr=(document.fonts&&document.fonts.ready)?document.fonts.ready:Promise.resolve();
   Promise.all([loadAll(),audioReady(),fr]).then(function(){ buildTimeline(); render(0); requestAnimationFrame(frame); });
