@@ -17,7 +17,7 @@ body{background:radial-gradient(120% 80% at 50% -10%,#191a1e 0%,#050506 60%);col
   min-height:100vh;gap:14px;padding:18px}
 .head{text-align:center}
 .head .kick{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--orange)}
-.head h1{margin:4px 0 0;font-size:20px;font-weight:700;letter-spacing:.01em}
+.head h1{margin:4px 0 0;font-size:20px;font-weight:700}
 .stagewrap{position:relative;height:min(78vh,760px);aspect-ratio:9/16;border-radius:20px;overflow:hidden;
   box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 1px rgba(237,237,234,.08)}
 canvas{display:block;width:100%;height:100%;background:#000}
@@ -37,7 +37,7 @@ canvas{display:block;width:100%;height:100%;background:#000}
 .bar{flex:1;height:5px;background:rgba(237,237,234,.16);border-radius:999px;position:relative;cursor:pointer}
 .bar .fill{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--orange);border-radius:999px}
 .time{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;flex:0 0 auto;min-width:66px;text-align:right}
-.cap{font-size:12px;color:var(--muted);max-width:440px;text-align:center;line-height:1.5}
+.cap{font-size:12px;color:var(--muted);max-width:460px;text-align:center;line-height:1.5}
 .cap b{color:#c9ccd1;font-weight:600}
 </style>
 </head>
@@ -68,10 +68,10 @@ canvas{display:block;width:100%;height:100%;background:#000}
   <button id="muteBtn" title="Mute">🔊</button>
 </div>
 
-<div class="cap">Prototype · placeholder images from the event kit — <b>your real photos drop straight in</b>. Cut to the <b>“No Random Move”</b> theme at ~136 BPM: every transition and pulse lands on the beat.</div>
+<div class="cap">Real event photos, <b>ordered by capture time</b> and bucketed into the night’s phases — cut to the <b>“No Random Move”</b> theme (~136 BPM). Every transition and pulse lands on the beat.</div>
 
 <audio id="track" src="../assets/theme.wav" preload="auto"></audio>
-
+<script src="photos.js"></script>
 <script>
 (function(){
   var C=document.getElementById('stage'), X=C.getContext('2d'), W=1080, H=1920;
@@ -80,18 +80,18 @@ canvas{display:block;width:100%;height:100%;background:#000}
   document.getElementById('who').textContent=NAME;
   document.getElementById('posterName').textContent=NAME;
 
-  // ---- beat grid (from offline analysis of the theme) ----
-  var BPM=136.36, BEAT=60/BPM, OFFSET=0.06;   // seconds
-  var FADE=0.22;                               // crossfade on the beat
+  var BPM=136.36, BEAT=60/BPM, OFFSET=0.06, FADE=0.22;
+  var PHOTOS=window.MEMORY_PHOTOS||[];
 
   var A='../assets/';
-  var SRC={badge:'badge.png',bg:'bg.jpg',coin:'coin.png',tagline:'tagline.png',wordmark:'wordmark.png',
-    men:'dress_men.jpg',women:'dress_women.jpg',hijab:'dress_hijab.jpg',scarf:'dress_scarf_photo.jpg',
-    beef:'th_beef.jpg',salmon:'th_salmon.jpg',grill:'th_grillchicken.jpg',ny:'th_ny.jpg'};
+  var SRC={badge:'badge.png',bg:'bg.jpg',coin:'coin.png',tagline:'tagline.png',wordmark:'wordmark.png'};
   var IMG={};
-  function loadImgs(){return Promise.all(Object.keys(SRC).map(function(k){return new Promise(function(res){
-    var im=new Image(); im.onload=function(){IMG[k]=im;res();}; im.onerror=function(){res();}; im.src=A+SRC[k];
-  });}));}
+  function loadImg(src){return new Promise(function(res){var i=new Image();i.onload=function(){res(i);};i.onerror=function(){res(null);};i.src=src;});}
+  function loadAll(){
+    var jobs=Object.keys(SRC).map(function(k){return loadImg(A+SRC[k]).then(function(im){IMG[k]=im;});});
+    PHOTOS.forEach(function(p){ jobs.push(loadImg(p.src).then(function(im){p.im=im;})); });
+    return Promise.all(jobs);
+  }
   function audioReady(){return new Promise(function(res){
     if(AUD.readyState>=1&&AUD.duration)res(); else AUD.addEventListener('loadedmetadata',function(){res();},{once:true});
     AUD.addEventListener('error',function(){res();},{once:true});
@@ -101,43 +101,29 @@ canvas{display:block;width:100%;height:100%;background:#000}
   function clamp(v,a,b){return v<a?a:v>b?b:v;}
   function ease(t){t=clamp(t,0,1);return t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;}
   function rnd(s){var x=Math.sin(s*127.1+311.7)*43758.5453;return x-Math.floor(x);}
-  function kb(i){var d=rnd(i)<.5?-1:1;return {z0:1.06+rnd(i+1)*0.05,z1:1.20+rnd(i+2)*0.06,
-    px0:d*(0.15+rnd(i+3)*0.35),px1:-d*(0.15+rnd(i+4)*0.35),py0:(rnd(i+5)-.5)*0.4,py1:(rnd(i+6)-.5)*0.4};}
+  function kb(i){var d=rnd(i)<.5?-1:1;return {z0:1.04+rnd(i+1)*0.04,z1:1.13+rnd(i+2)*0.05,
+    px0:d*(0.10+rnd(i+3)*0.28),px1:-d*(0.10+rnd(i+4)*0.28),py0:(rnd(i+5)-.5)*0.28,py1:(rnd(i+6)-.5)*0.28};}
+  function beatPunch(T){var ph=(T-OFFSET)/BEAT;if(ph<0)return 0;var idx=Math.floor(ph),frac=ph-idx;
+    var amp=(idx%4===0)?0.045:0.025;var d=1-frac;return amp*d*d;}
 
-  // beat "pulse": a quick pop on each beat, bigger on bar downbeats
-  function beatPunch(T){
-    var ph=(T-OFFSET)/BEAT; if(ph<0)return 0; var idx=Math.floor(ph), frac=ph-idx;
-    var amp=(idx%4===0)?0.05:0.028; var d=(1-frac); return amp*d*d;
-  }
-
-  // ---- storyboard measured in BEATS (so cuts fall on the beat) ----
-  var SB=[
-    {kind:'title', beats:4},
-    {kind:'photo', img:'men',   phase:'ARRIVE',    time:'14:00', beats:4},
-    {kind:'photo', img:'women', beats:4},
-    {kind:'photo', img:'scarf', phase:'CONNECT',   time:'16:00', beats:4},
-    {kind:'photo', img:'beef',  phase:'DINE',      time:'19:00', beats:4},
-    {kind:'photo', img:'salmon',beats:4},
-    {kind:'fireworks',          phase:'FIREWORKS', time:'21:10', beats:8},
-    {kind:'photo', img:'ny',    phase:'CELEBRATE', beats:4},
-    {kind:'photo', img:'coin',  phase:'FAREWELL',  time:'22:20', beats:4},
-    {kind:'end',                beats:4}
-  ];
-  var TOTAL=0;
+  // ---- storyboard: title → photos (2 beats each) → end, on the beat grid ----
+  var SB=[], TOTAL=0;
   function buildTimeline(){
+    SB=[{kind:'title', beats:4}];
+    var prevPhase=null;
+    PHOTOS.forEach(function(p){
+      SB.push({kind:'photo', im:p.im, phase:p.phase, time:p.time, first:(p.phase!==prevPhase), beats:2});
+      prevPhase=p.phase;
+    });
+    SB.push({kind:'end', beats:4});
     var cum=0;
     SB.forEach(function(c,i){ c.i=i; c.kbp=kb(i*7+3); c.start=OFFSET+cum*BEAT; c.dur=c.beats*BEAT; cum+=c.beats; });
     var last=SB[SB.length-1];
     var trackDur=(AUD.duration&&isFinite(AUD.duration))?AUD.duration:(last.start+last.dur);
-    last.dur=Math.max(last.dur, trackDur-last.start);   // hold end card until the music ends
+    last.dur=Math.max(last.dur, trackDur-last.start);
     TOTAL=trackDur;
   }
 
-  // fireworks bursts on the beat during the FIREWORKS clip
-  var BURSTS=[]; (function(){var hues=['#ffd08a','#E8690A','#fff3e0','#f2a24a','#ffbf69','#E8690A','#ffd08a','#E8690A'];
-    for(var b=0;b<8;b++){BURSTS.push({beat:b, x:W*(0.20+rnd(b*3)*0.60), y:H*(0.22+rnd(b*3+1)*0.36), col:hues[b%hues.length], seed:b*11});}})();
-
-  // ---------- drawing ----------
   function drawCover(img,zoom,px,py,alpha){
     if(!img)return; var iw=img.naturalWidth||img.width, ih=img.naturalHeight||img.height;
     var cover=Math.max(W/iw,H/ih), dw=iw*cover*zoom, dh=ih*cover*zoom;
@@ -145,35 +131,20 @@ canvas{display:block;width:100%;height:100%;background:#000}
     X.globalAlpha=alpha; X.drawImage(img,x,y,dw,dh); X.globalAlpha=1;
   }
   function tone(alpha){X.globalAlpha=alpha;var g=X.createLinearGradient(0,0,0,H);
-    g.addColorStop(0,'rgba(8,7,5,.28)');g.addColorStop(.5,'rgba(8,7,5,.05)');g.addColorStop(1,'rgba(6,5,4,.55)');
+    g.addColorStop(0,'rgba(8,7,5,.30)');g.addColorStop(.5,'rgba(8,7,5,.04)');g.addColorStop(1,'rgba(6,5,4,.58)');
     X.fillStyle=g;X.fillRect(0,0,W,H);X.globalAlpha=1;}
   function drawPhoto(c,localT,alpha,T){
-    var p=clamp(localT/c.dur,0,1), k=c.kbp;
+    var p=clamp(localT/c.dur,0,1),k=c.kbp;
     var z=lerp(k.z0,k.z1,ease(p))*(1+beatPunch(T));
-    var px=lerp(k.px0,k.px1,ease(p)), py=lerp(k.py0,k.py1,ease(p));
+    var px=lerp(k.px0,k.px1,ease(p)),py=lerp(k.py0,k.py1,ease(p));
     if(alpha>=1){X.fillStyle='#000';X.fillRect(0,0,W,H);}
-    drawCover(IMG[c.img],z,px,py,alpha); tone(alpha);
-  }
-  function drawFireworks(c,localT,alpha){
-    drawCover(IMG.bg,1.15*(1+beatPunch(localT+c.start)*0.6),0,0,alpha*0.5);
-    X.globalAlpha=alpha;X.fillStyle='rgba(4,4,6,.55)';X.fillRect(0,0,W,H);X.globalAlpha=1;
-    X.globalCompositeOperation='lighter';
-    for(var bi=0;bi<BURSTS.length;bi++){var B=BURSTS[bi], bt=B.beat*BEAT, age=localT-bt, life=BEAT*3.4;
-      if(age<0||age>=life)continue; var N=42;
-      for(var k=0;k<N;k++){var ang=k/N*Math.PI*2, sp=2.6+rnd(B.seed+k)*3.4;
-        var x=B.x+Math.cos(ang)*sp*age*90, y=B.y+Math.sin(ang)*sp*age*90+0.5*260*age*age;
-        var a=alpha*clamp(1-age/life,0,1); if(a<=0)continue;
-        X.globalAlpha=a; X.fillStyle=B.col; X.beginPath(); X.arc(x,y,6*(1-age/life)+1.5,0,7); X.fill();
-      }
-    }
-    X.globalAlpha=1;X.globalCompositeOperation='source-over';
+    drawCover(c.im,z,px,py,alpha); tone(alpha);
   }
   function card(alpha,body){X.fillStyle='#000';X.globalAlpha=alpha;X.fillRect(0,0,W,H);
     var g=X.createRadialGradient(W/2,H*0.36,60,W/2,H*0.36,W*0.9);g.addColorStop(0,'rgba(232,105,10,.22)');g.addColorStop(1,'rgba(232,105,10,0)');
     X.fillStyle=g;X.fillRect(0,0,W,H);X.globalAlpha=1;body(alpha);}
   function drawTitle(c,localT,alpha,T){card(alpha,function(a){X.globalAlpha=a;X.textAlign='center';
-    var pop=1+beatPunch(T)*0.8;
-    if(IMG.badge){var bw=W*0.66*pop,bh=IMG.badge.height*(bw/IMG.badge.width);X.drawImage(IMG.badge,(W-bw)/2,H*0.20-(bh-IMG.badge.height*(W*0.66/IMG.badge.width))/2,bw,bh);}
+    if(IMG.badge){var bw=W*0.66,bh=IMG.badge.height*(bw/IMG.badge.width);X.drawImage(IMG.badge,(W-bw)/2,H*0.20,bw,bh);}
     X.fillStyle='#F08A2E';X.font='600 34px "Source Sans 3",sans-serif';try{X.letterSpacing='6px';}catch(e){}
     X.fillText('A TRADEPENDENCE MEMORY',W/2,H*0.60);try{X.letterSpacing='0px';}catch(e){}
     X.fillStyle='#F4F4F1';X.font='900 118px "Source Sans 3",sans-serif';X.fillText('Your Night',W/2,H*0.685);
@@ -190,9 +161,9 @@ canvas{display:block;width:100%;height:100%;background:#000}
   function overlays(top,topLocalT){
     var v=X.createRadialGradient(W/2,H*0.46,H*0.28,W/2,H*0.5,H*0.72);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(0,0,0,.5)');
     X.fillStyle=v;X.fillRect(0,0,W,H);
-    if(top&&top.phase){var a=clamp(topLocalT/0.3,0,1)*clamp((top.dur-topLocalT)/0.5,0,1)*clamp((BEAT*5-topLocalT)/0.5,0,1);
+    if(top&&top.phase){var a=clamp(topLocalT/0.25,0,1)*clamp((top.dur+FADE-topLocalT)/0.3,0,1);
       if(a>0.01){X.globalAlpha=a;X.textAlign='left';
-        if(top.time){X.fillStyle='#F08A2E';X.font='700 40px "Source Sans 3",sans-serif';X.fillText(top.time,70,H-150);}
+        X.fillStyle='#F08A2E';X.font='700 40px "Source Sans 3",sans-serif';X.fillText(top.time,70,H-150);
         X.fillStyle='#F4F4F1';X.font='900 72px "Source Sans 3",sans-serif';X.fillText(top.phase,68,H-78);X.globalAlpha=1;}}
     X.globalAlpha=.5;X.textAlign='center';X.fillStyle='#c9ccd1';X.font='600 24px "Source Sans 3",sans-serif';
     try{X.letterSpacing='3px';}catch(e){}X.fillText('JUNO · TRADEPENDENCE DAY 2026',W/2,64);try{X.letterSpacing='0px';}catch(e){}X.globalAlpha=1;
@@ -202,10 +173,9 @@ canvas{display:block;width:100%;height:100%;background:#000}
     X.fillStyle='#000';X.fillRect(0,0,W,H);
     var top=null,topLocal=0;
     for(var i=0;i<SB.length;i++){var c=SB[i];
-      if(T>=c.start && T<c.start+c.dur+FADE){          // linger FADE past end so crossfade has no black gap
+      if(T>=c.start && T<c.start+c.dur+FADE){
         var localT=T-c.start, alpha=clamp(localT/FADE,0,1); if(i===0)alpha=clamp(localT/0.5,0,1);
         if(c.kind==='photo')drawPhoto(c,localT,alpha,T);
-        else if(c.kind==='fireworks')drawFireworks(c,localT,alpha);
         else if(c.kind==='title')drawTitle(c,localT,alpha,T);
         else if(c.kind==='end')drawEnd(c,localT,alpha);
         if(localT<c.dur){top=c;topLocal=localT;}
@@ -214,7 +184,6 @@ canvas{display:block;width:100%;height:100%;background:#000}
     overlays(top,topLocal);
   }
 
-  // ---------- clock driven by the audio ----------
   var poster=document.getElementById('poster'), playBtn=document.getElementById('playBtn'),
       fill=document.getElementById('fill'), timeEl=document.getElementById('time'), bar=document.getElementById('bar');
   var lastT=0;
@@ -232,12 +201,11 @@ canvas{display:block;width:100%;height:100%;background:#000}
   document.getElementById('restartBtn').onclick=function(){ AUD.currentTime=0; play(); };
   poster.onclick=play;
   AUD.addEventListener('ended',function(){ playBtn.textContent='↺'; });
-  bar.onclick=function(e){var r=bar.getBoundingClientRect(); var t=clamp((e.clientX-r.left)/r.width,0,1)*TOTAL; AUD.currentTime=t; lastT=t; if(AUD.paused)render(t); };
+  bar.onclick=function(e){var r=bar.getBoundingClientRect();var t=clamp((e.clientX-r.left)/r.width,0,1)*TOTAL;AUD.currentTime=t;lastT=t;if(AUD.paused)render(t);};
   document.getElementById('muteBtn').onclick=function(){ AUD.muted=!AUD.muted; this.textContent=AUD.muted?'🔇':'🔊'; };
 
-  // ---------- boot ----------
   var fr=(document.fonts&&document.fonts.ready)?document.fonts.ready:Promise.resolve();
-  Promise.all([loadImgs(),audioReady(),fr]).then(function(){ buildTimeline(); render(0); requestAnimationFrame(frame); });
+  Promise.all([loadAll(),audioReady(),fr]).then(function(){ buildTimeline(); render(0); requestAnimationFrame(frame); });
 })();
 </script>
 </body>
